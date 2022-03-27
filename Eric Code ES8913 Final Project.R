@@ -7,10 +7,12 @@ library(data.table)
 library(dplyr)
 library(FactoMineR)
 library(factoextra)
+library(tidyr)
 
 # Data Manipulations ------------------------------------------------------
 
-data<-fread(paste0(getwd(),"/contaminant_database.csv"))
+#data<-fread(paste0(getwd(),"/contaminant_database.csv"))
+data <- fread("C:/Users/ericf/Desktop/Ryerson Masters/ES8913/contaminant_database.csv")
 
 ##data manipulations
 data<-data %>% rowwise() %>%
@@ -197,7 +199,114 @@ data<- data %>%   rowwise() %>%
                x1.2.3.4_Tetrachlorobenzene,
                x1.2.4.5_Tetrachlorobenzene_1.2.3.5_Tetrachlorobenzene, na.rm = TRUE))
 
-data3 <- select(data, 1:8, 871, 876:878)
+
+#making a new df with only the summarized conaminants
+
+sum_data <- select(data, 1:8, 870:879)
+
+
+# k-means for all ------------------------------------------------------------
+
+
+#scaling the data
+
+scale_data <- sum_data
+scale_data[9:18] <- scale(scale_data[9:18])
+
+
+# k-means test
+  # total contaminants (PDBE, metals, PFAS, OPEs)
+
+kmeans_test <- kmeans(x = scale_data[c(10,15:17)],
+                     centers = 5,
+                     iter.max = 100,
+                     nstart = 25,
+                     algorithm = "Hartigan-Wong",
+                     trace = FALSE)
+
+kmeans_test$cluster
+kmeans_test$centers
+kmeans_test$size
+
+
+
+#visualizing the clusters
+
+fviz_cluster(kmeans_test, geom = "point", data = scale_data[c(10,15:17)]) + 
+  scale_color_manual(values = wesanderson::wes_palette("IsleofDogs1",length(kmeans_test$size))) + 
+  scale_fill_manual(values = wesanderson::wes_palette("IsleofDogs1",length(kmeans_test$size))) + 
+  labs(title = "Cluster Plot",
+       fill = "Cluster",
+       shape = "Cluster",
+       color = "Cluster") + 
+  theme_bw() 
+
+
+# Elbow method for determining number of clusters
+  # 5 clusters is appropriate for the data in its current state
+
+set.seed(69420)
+fviz_nbclust(scale_data[c(10,15:17)], kmeans, method = "wss")
+
+
+sum_data$cluster <- kmeans_test$cluster
+sum_data2 <- sum_data[c(1:8,10,15:17,19)]
+
+
+# k-means for metals ------------------------------------------------------
+
+metals_df <- sum_data[c(1:8,15)]
+
+metals_tissue <- pivot_wider(metals_df,
+                             id_cols = c("Bird_ID", "Collection.Location", "Sex", "species"),
+                             names_from = "Tissue",
+                             values_from = "metals")
+
+metals_location <- pivot_wider(metals_df,
+                               id_cols = c("Bird_ID", "Tissue", "Sex", "species"),
+                               names_from = "Collection.Location",
+                               values_from = "metals")
+
+metals_species <- pivot_wider(metals_df,
+                              id_cols = c("Bird_ID", "Collection.Location", "Tissue", "Sex"),
+                              names_from = "species",
+                              values_from = "metals")
+
+metals_sex <- pivot_wider(metals_df,
+                          id_cols = c("Bird_ID", "Collection.Location", "Tissue", "species"),
+                          names_from = "Sex",
+                          values_from = "metals")
+
+
+
+
+
+kmeans_metals <- kmeans(x = metals_tissue[8:14],
+                      centers = 5,
+                      iter.max = 100,
+                      nstart = 25,
+                      algorithm = "Hartigan-Wong",
+                      trace = FALSE)
+
+kmeans_test$cluster
+kmeans_test$centers
+
+
+fviz_cluster(kmeans_metals, geom = "point", data = scale_data[15]) + 
+  scale_color_manual(values = wesanderson::wes_palette("IsleofDogs1",length(kmeans_metals$size))) + 
+  scale_fill_manual(values = wesanderson::wes_palette("IsleofDogs1",length(kmeans_metals$size))) + 
+  labs(title = "Cluster Plot",
+       fill = "Cluster",
+       shape = "Cluster",
+       color = "Cluster") + 
+  theme_bw() 
+
+
+# Elbow method for determining number of clusters
+# 5 clusters is appropriate for the data in its current state
+
+set.seed(69420)
+fviz_nbclust(scale_data[c(10,15:17)], kmeans, method = "wss")
 
 
 # PCA ---------------------------------------------------------------------
@@ -218,20 +327,6 @@ fviz_pca_biplot(contam_PCA, repel = TRUE,
 
 
 
-# k-means Clustering ------------------------------------------------------
-
-
-library(ClusterR)
-library(cluster)
-
-
-reduced_data <- data2[15:16]
-
-
-k_means_tissue <- kmeans(reduced_data, centers = 8, nstart = 20)
-k_means_tissue
-
-k_means_tissue$cluster
 
 
 
