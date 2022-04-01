@@ -26,7 +26,7 @@ data<-data %>% rowwise() %>%
 
 #total PBDE in ng/g
 data<-data %>% rowwise() %>%
-  mutate(Total_PBDE =
+  mutate(PBDE =
            sum(BDE17_Kim,
                BDE28_Kim,
                BDE47_Kim,
@@ -127,11 +127,11 @@ data<- data %>% rowwise() %>%
 
 #Total metals
 data<- data %>% rowwise() %>%
-  mutate(metals =   sum(Lead, Chromium, Arsenic, Cadmium, Copper, Manganese, Rubidium, Aluminum, Mercury, Molybdenum, Nickel, Lithium, Strontium, Boron, Cobalt, Bismuth, Silver, na.rm = TRUE))
+  mutate(Metals =   sum(Lead, Chromium, Arsenic, Cadmium, Copper, Manganese, Rubidium, Aluminum, Mercury, Molybdenum, Nickel, Lithium, Strontium, Boron, Cobalt, Bismuth, Silver, na.rm = TRUE))
 
 #Total PFAS [ng/g]
 data<- data %>% rowwise() %>%
-  mutate(Total_PFAS =
+  mutate(PFAS =
            sum(FBSA_Rob,
                FOSA_Rob,
                N_MeFOSA_Rob,
@@ -157,7 +157,7 @@ data<- data %>% rowwise() %>%
 
 #Total OPEs [ng/g]
 data<- data %>%  rowwise() %>%
-  mutate(Total_OPE =
+  mutate(OPE =
            sum(TEP,
                TPrP,
                TNBP,
@@ -200,7 +200,7 @@ data<- data %>%   rowwise() %>%
                x1.2.4.5_Tetrachlorobenzene_1.2.3.5_Tetrachlorobenzene, na.rm = TRUE))
 
 
-#making a new df with only the summarized conaminants
+# making a new df with only the summarized conaminants
 
 sum_data <- select(data, 1:8, 870:879)
 
@@ -208,7 +208,8 @@ sum_data <- select(data, 1:8, 870:879)
 # k-means for all ------------------------------------------------------------
 
 
-#scaling the data
+# scaling the data
+  # may not be necessary, have to check the manuscript and see what units everything is in
 
 scale_data <- sum_data
 scale_data[9:18] <- scale(scale_data[9:18])
@@ -249,11 +250,62 @@ set.seed(69420)
 fviz_nbclust(scale_data[c(10,15:17)], kmeans, method = "wss")
 
 
+# adding a column that shows which row each cluster correlates to
+
 sum_data$cluster <- kmeans_test$cluster
-sum_data2 <- sum_data[c(1:8,10,15:17,19)]
+sum_data2 <- sum_data[c(1:8,10,15:17)]
+
+
+# Pivoting long and facet boxplots ---------------------------------------
+
+
+
+# taking the scaled data for only metals, PBDE, OPEs, and PFAS
+  # may not be necessary, have to check the manuscript and see what units everything is in
+
+scale_data2 <- scale_data[c(1:8,10,15:17)]
+
+
+# pivoting the un-scaled data long
+
+long_df <- pivot_longer(sum_data2,
+                       cols = c("Metals", "PBDE", "PFAS", "OPE"),
+                       names_to = "Contaminant",
+                       values_to = "Concentration")
+
+# pivoting the scaled data long
+
+long_df_scale <- pivot_longer(scale_data2,
+                        cols = c("Metals", "PBDE", "PFAS", "OPE"),
+                        names_to = "Contaminant",
+                        values_to = "Concentration")
+
+
+# facet boxplots template
+  # feel free to update the theme/colourings, etc.
+
+ggplot(data = long_df_scale, aes(x = Contaminant, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Tissue, scales = "free") + 
+  ylab("Concentration") + 
+  xlab("Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 10, color = "black"), 
+        strip.text.y = element_text(size = 15, color = "black")) +
+  theme(text = element_text(size=15), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_text(color = "black"), 
+        legend.position = "bottom")
+
+
+
 
 
 # k-means for metals ------------------------------------------------------
+
+# attempt to pivot the df wide for metals
+  # too many NA values to do any valuable analysis
+
 
 metals_df <- sum_data[c(1:8,15)]
 
@@ -279,7 +331,8 @@ metals_sex <- pivot_wider(metals_df,
 
 
 
-
+# attempt at doing k-means on one of these pivoted dfs
+  # hint: didn't go well
 
 kmeans_metals <- kmeans(x = metals_tissue[8:14],
                       centers = 5,
@@ -302,17 +355,13 @@ fviz_cluster(kmeans_metals, geom = "point", data = scale_data[15]) +
   theme_bw() 
 
 
-# Elbow method for determining number of clusters
-# 5 clusters is appropriate for the data in its current state
-
-set.seed(69420)
-fviz_nbclust(scale_data[c(10,15:17)], kmeans, method = "wss")
-
-
 # PCA ---------------------------------------------------------------------
 
 
-contam_PCA <- PCA(data3[9:11], scale.unit = TRUE, ncp = 2, graph = TRUE)
+# attempt of doing PCA on the data
+  # hint: this also didn't go well
+
+contam_PCA <- PCA(scale_data[c(10,15:17)], scale.unit = TRUE, ncp = 2, graph = TRUE)
 
 
 fviz_eig(contam_PCA,
@@ -327,6 +376,16 @@ fviz_pca_biplot(contam_PCA, repel = TRUE,
 
 
 
+# Things to do ------------------------------------------------------------
 
+
+#k-s test
+  #compares distribution
+#try other stats test comparing distributions
+#compare CVs
+#correlation tests between variables
+#boxplots for each grouping variable to accompany these tests
+#scatterplots comparing different variables, manually colour by a given grouping variable
+  #try to manually identify any clusters
 
 
