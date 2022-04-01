@@ -280,11 +280,34 @@ long_df_scale <- pivot_longer(scale_data2,
                         names_to = "Contaminant",
                         values_to = "Concentration")
 
+# pivoting the long_df to a wide one for statistical analysis
+
+tissue_df <- pivot_wider(long_df,
+                             id_cols = c("Bird_ID",
+                                         "Element",
+                                         "USOX",
+                                         "species",
+                                         "Sex",
+                                         "Collection.Date",
+                                         "Collection.Location",
+                                         "Contaminant"),
+                             names_from = "Tissue",
+                             values_from = "Concentration")
+
+# ks test from dgof package
+
+install.packages("dgof")
+library(dgof)
+
+ks.test(x = tissue_df$preen_oil,
+        y = tissue_df$brain)
+
+
 
 # facet boxplots template
   # feel free to update the theme/colourings, etc.
 
-ggplot(data = long_df_scale, aes(x = Contaminant, y = Concentration)) + 
+ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ Tissue, scales = "free") + 
   ylab("Concentration") + 
