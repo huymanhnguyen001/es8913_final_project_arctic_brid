@@ -1,17 +1,13 @@
 # Loading packages --------------------------------------------------------
 library(ggplot2)
+library(data.table)
 library(viridis)
 library(wesanderson)
 library(scales)
 library(gridExtra)
 library(tidyverse)
-library(lubridate)
-library(pillar)
 library(dplyr)
-library(zoo)
-library(float)
 library(vegan)
-library(ape)
 library(rmarkdown) 
 library(knitr)
 library(FactoMineR)
@@ -20,6 +16,17 @@ library(factoextra)
 # Data Import and Manipulation -------------------------------------------------------
 
 data <- read.csv(paste0(getwd(), "./contaminant_database.csv"))
+
+# Change name of Sex variable
+
+for (i in 1:dim(data)[1]) {
+  if (data$Sex[i] == "F") {
+    data$Sex[i] <- "Female"
+  }
+  else {
+    data$Sex[i] <- "Male"
+  }
+}
 
 # Adding sum columns ------------------------------------------------------
 
@@ -233,304 +240,93 @@ data <- data %>%
                X1.2.4.5_Tetrachlorobenzene_1.2.3.5_Tetrachlorobenzene, na.rm = TRUE))
 
 
+# Extracting 4 best groups of contaminant: metals, PBDE, PFAS, OPE --------
+
+sum_4_conta_data <- select(data, species, Sex, Collection.Location, 
+                           Total_PBDE, metals, Total_PFAS, Total_OPE)
+
+# Scale data to reduce outlier effect
+sum_4_conta_scale_data <- copy(sum_4_conta_data)
+sum_4_conta_scale_data[4:7] <- scale(sum_4_conta_scale_data[4:7])
+
+
 # Pivot longer --------------------------------------------------------------
-
-data_metal <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         Lead, 
-         Chromium, 
-         Arsenic,
-         Cadmium, 
-         Copper, 
-         Manganese, 
-         Rubidium, 
-         Aluminum, 
-         Mercury, 
-         Molybdenum, 
-         Nickel, 
-         Lithium, 
-         Strontium, 
-         Boron, 
-         Cobalt,
-         Bismuth, 
-         Silver)
-
-data_metal_longer <- data_metal %>%
-  pivot_longer(cols = c("Lead", 
-                        "Chromium", 
-                        "Arsenic",
-                        "Cadmium", 
-                        "Copper", 
-                        "Manganese", 
-                        "Rubidium", 
-                        "Aluminum", 
-                        "Mercury", 
-                        "Molybdenum", 
-                        "Nickel", 
-                        "Lithium", 
-                        "Strontium", 
-                        "Boron", 
-                        "Cobalt",
-                        "Bismuth", 
-                        "Silver"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
-
-data_PBDE <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         BDE17_Kim,
-         BDE28_Kim,
-         BDE47_Kim,
-         BDE49_Kim,
-         BDE66_Kim,
-         BDE85_Kim,
-         BDE99_Kim,
-         BDE100_Kim,
-         BDE138_Kim,
-         BDE153_Kim,
-         BDE154_BB153_Kim,
-         BDE183_Kim,
-         BDE190_Kim,
-         BDE209_Kim,
-         BDE100_Rob,
-         BDE119_Rob,
-         BDE138_Rob,
-         BDE15_Rob,
-         BDE153_Rob,
-         BDE154_Rob,
-         BDE17_Rob,
-         BDE181_Rob,
-         BDE183_Rob,
-         BDE203_Rob,
-         BDE205_Rob,
-         BDE206_Rob,
-         BDE207_Rob,
-         BDE209_Rob,
-         BDE28_Rob,
-         BDE3_Rob,
-         BDE47_Rob,
-         BDE49_Rob,
-         BDE66_Rob,
-         BDE7_Rob,
-         BDE71_Rob,
-         BDE77_Rob,
-         BDE85_BDE155_Rob,
-         BDE99_Rob)
-
-data_PBDE_longer <- data_PBDE %>%
-  pivot_longer(cols = c("BDE17_Kim",
-                        "BDE28_Kim",
-                        "BDE47_Kim",
-                        "BDE49_Kim",
-                        "BDE66_Kim",
-                        "BDE85_Kim",
-                        "BDE99_Kim",
-                        "BDE100_Kim",
-                        "BDE138_Kim",
-                        "BDE153_Kim",
-                        "BDE154_BB153_Kim",
-                        "BDE183_Kim",
-                        "BDE190_Kim",
-                        "BDE209_Kim",
-                        "BDE100_Rob",
-                        "BDE119_Rob",
-                        "BDE138_Rob",
-                        "BDE15_Rob",
-                        "BDE153_Rob",
-                        "BDE154_Rob",
-                        "BDE17_Rob",
-                        "BDE181_Rob",
-                        "BDE183_Rob",
-                        "BDE203_Rob",
-                        "BDE205_Rob",
-                        "BDE206_Rob",
-                        "BDE207_Rob",
-                        "BDE209_Rob",
-                        "BDE28_Rob",
-                        "BDE3_Rob",
-                        "BDE47_Rob",
-                        "BDE49_Rob",
-                        "BDE66_Rob",
-                        "BDE7_Rob",
-                        "BDE71_Rob",
-                        "BDE77_Rob",
-                        "BDE85_BDE155_Rob",
-                        "BDE99_Rob"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
-
-data_PFAS <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         FBSA._Rob,
-         FOSA._Rob,
-         N_MeFOSA._Rob,
-         N_EtFOSA._Rob,
-         PFEtCHxS._Rob,
-         PFBS._Rob,
-         PFHxS._Rob,
-         PFOS._Rob,
-         PFDS._Rob,
-         PFBA._Rob,
-         PFPeA._Rob,
-         PFHxA._Rob,
-         PFHpA._Rob,
-         PFOA._Rob,
-         PFNA._Rob,
-         PFDA._Rob,
-         PFUdA._Rob,
-         PFDoA._Rob,
-         PFTrDA._Rob,
-         PFTeDA._Rob,
-         PFHxDA._Rob,
-         PFODA._Rob)
-
-data_PFAS_longer <- data_PFAS %>%
-  pivot_longer(cols = c("FBSA._Rob",
-                        "FOSA._Rob",
-                        "N_MeFOSA._Rob",
-                        "N_EtFOSA._Rob",
-                        "PFEtCHxS._Rob",
-                        "PFBS._Rob",
-                        "PFHxS._Rob",
-                        "PFOS._Rob",
-                        "PFDS._Rob",
-                        "PFBA._Rob",
-                        "PFPeA._Rob",
-                        "PFHxA._Rob",
-                        "PFHpA._Rob",
-                        "PFOA._Rob",
-                        "PFNA._Rob",
-                        "PFDA._Rob",
-                        "PFUdA._Rob",
-                        "PFDoA._Rob",
-                        "PFTrDA._Rob",
-                        "PFTeDA._Rob",
-                        "PFHxDA._Rob",
-                        "PFODA._Rob"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
-
-data_OPE <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         TEP,
-         TPrP,
-         TNBP,
-         TBOEP,
-         TEHP,
-         TCEP,
-         TCIPP,
-         TDCIPP,
-         BCMP_BCEP,
-         T2B4MP,
-         T3B4MP,
-         T4B3MP,
-         TDBPP,
-         TTBNPP,
-         TPHP,
-         EHDPP,
-         TMPP)
-
-data_OPE_longer <- data_OPE %>%
-  pivot_longer(cols = c("TEP",
-                        "TPrP",
-                        "TNBP",
-                        "TBOEP",
-                        "TEHP",
-                        "TCEP",
-                        "TCIPP",
-                        "TDCIPP",
-                        "BCMP_BCEP",
-                        "T2B4MP",
-                        "T3B4MP",
-                        "T4B3MP",
-                        "TDBPP",
-                        "TTBNPP",
-                        "TPHP",
-                        "EHDPP",
-                        "TMPP"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
-
-# Check percentage of non-NA and non-zero values in each group of contaminants 
-# data_OCP_longer_non_zero <- data_OCP_longer %>%
-#   filter(value > 0)
-# 
-# sum(!is.na(data_metals_longer_non_zero$value))/sum(!is.na(data_metals_longer$value))
-
+long_scale_df <- pivot_longer(sum_4_conta_scale_data,
+                        cols = c("metals", "Total_PBDE", 
+                                 "Total_PFAS", "Total_OPE"),
+                        names_to = "Contaminant",
+                        values_to = "Concentration")
 
 # Visualize Data Distribution ---------------------------------------------
-# Box plots
 
-metal_boxplot <- ggplot(data = data_metal_longer,
-                        aes(x = contaminant,
-                            y = value,
-                            fill = Tissue)) +
-                geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+# Facet box plots Location---------------------------------------------------------
 
-PBDE_boxplot <- ggplot(data = data_PBDE_longer,
-                       aes(x = contaminant,
-                           y = value,
-                           fill = Tissue)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Collection.Location, scales = "free") + 
+  ylab("Concentration") + 
+  xlab("Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 10,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 10,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.position = "bottom")
 
-PFAS_boxplot <- ggplot(data = data_PFAS_longer,
-                       aes(x = contaminant,
-                           y = value,
-                           fill = Tissue,
-                           colour = Collection.Location)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-OPE_boxplot <- ggplot(data = data_OPE_longer,
-                       aes(x = contaminant,
-                           y = value,
-                           fill = Tissue,
-                           colour = Collection.Location)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+# Facet box plots Sex -----------------------------------------------------
 
-ggsave(paste0(getwd(), "/metal_boxplot.png"), 
-       metal_boxplot,
-       dpi = 320,
-       width = 10,
-       height = 5)
+ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Sex, scales = "free") + 
+  ylab("Concentration") + 
+  xlab("Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 10,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 10,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.position = "bottom")
 
-# PCA Analysis ------------------------------------------------------------
+# Facet box plots Species -------------------------------------------------
 
-res.pca <- PCA(decathlon2.active, graph = FALSE)
-fviz_contrib(res.pca, choice = "var", axes = 1:2, top = 10)
-fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 100))
+ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ species, scales = "free") + 
+  ylab("Concentration") + 
+  xlab("Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 10,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 10,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.position = "bottom")
+
+
+# Scatter plot metals, PBDE, PFAS, OPE ------------------------------------
+
+

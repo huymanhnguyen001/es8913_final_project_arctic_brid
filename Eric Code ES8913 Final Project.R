@@ -302,10 +302,8 @@ library(dgof)
 ks.test(x = tissue_df$preen_oil,
         y = tissue_df$brain)
 
+# Facet box plots ---------------------------------------------------------
 
-
-# facet boxplots template
-  # feel free to update the theme/colourings, etc.
 
 ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
