@@ -251,6 +251,12 @@ sum_4_conta_scale_data[5:8] <- scale(sum_4_conta_scale_data[5:8])
 
 
 # Pivot longer --------------------------------------------------------------
+long_df <- pivot_longer(sum_4_conta_data,
+                        cols = c("metals", "Total_PBDE", 
+                                 "Total_PFAS", "Total_OPE"),
+                        names_to = "Contaminant",
+                        values_to = "Concentration")
+
 long_scale_df <- pivot_longer(sum_4_conta_scale_data,
                         cols = c("metals", "Total_PBDE", 
                                  "Total_PFAS", "Total_OPE"),
@@ -261,25 +267,27 @@ long_scale_df <- pivot_longer(sum_4_conta_scale_data,
 
 # Facet box plots Tissue -------------------------------------------------
 
-tissue_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+tissue_boxplot <- ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ Tissue, scales = "free") + 
-  ylab("Concentration") + 
-  xlab("Contaminant Type") +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
   theme_classic() + 
   theme(strip.text.x = element_text(size = 15, color = "black"),
         axis.title.x = element_text(size = 15,
                                     vjust = -0.5),
         axis.title.y = element_text(size = 15,
                                     vjust = 1),
-        axis.text.x = element_text(size = 10,
+        axis.text.x = element_text(size = 15,
                                    angle = 45, 
                                    hjust = 1), 
-        axis.text.y = element_text(size = 10,
+        axis.text.y = element_text(size = 15,
                                    hjust = 1,
                                    vjust = 0.5,
                                    color = "black"), 
-        legend.position = "bottom")
+        legend.title = element_text(size=20), 
+        legend.text = element_text(size=20),
+        legend.position = c(0.65, 0.15))
 
 # Exporting plot 
 ggsave(paste0(getwd(), "/tissue_boxplot.png"), 
@@ -289,21 +297,21 @@ ggsave(paste0(getwd(), "/tissue_boxplot.png"),
 
 # Facet box plots Location---------------------------------------------------------
 
-location_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+location_boxplot <- ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ Collection.Location, scales = "free") + 
-  ylab("Concentration") + 
-  xlab("Contaminant Type") +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
   theme_classic() + 
   theme(strip.text.x = element_text(size = 15, color = "black"),
         axis.title.x = element_text(size = 15,
                                     vjust = -0.5),
         axis.title.y = element_text(size = 15,
                                     vjust = 1),
-        axis.text.x = element_text(size = 10,
+        axis.text.x = element_text(size = 15,
                                    angle = 45, 
                                    hjust = 1), 
-        axis.text.y = element_text(size = 10,
+        axis.text.y = element_text(size = 15,
                                    hjust = 1,
                                    vjust = 0.5,
                                    color = "black"), 
@@ -312,27 +320,26 @@ location_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concen
 # Exporting plot 
 ggsave(paste0(getwd(), "/location_boxplot.png"), 
        location_boxplot,
-       dpi = 320,
-       height = 10)
+       dpi = 320)
 
 
 # Facet box plots Sex -----------------------------------------------------
 
-sex_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+sex_boxplot <- ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ Sex, scales = "free") + 
-  ylab("Concentration") + 
-  xlab("Contaminant Type") +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
   theme_classic() + 
   theme(strip.text.x = element_text(size = 15, color = "black"),
         axis.title.x = element_text(size = 15,
                                     vjust = -0.5),
         axis.title.y = element_text(size = 15,
                                     vjust = 1),
-        axis.text.x = element_text(size = 10,
+        axis.text.x = element_text(size = 15,
                                    angle = 45, 
                                    hjust = 1), 
-        axis.text.y = element_text(size = 10,
+        axis.text.y = element_text(size = 15,
                                    hjust = 1,
                                    vjust = 0.5,
                                    color = "black"), 
@@ -341,26 +348,25 @@ sex_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentrati
 # Exporting plot 
 ggsave(paste0(getwd(), "/sex_boxplot.png"), 
        sex_boxplot,
-       dpi = 320,
-       height = 10)
+       dpi = 320)
 
 # Facet box plots Species -------------------------------------------------
 
-spe_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+spe_boxplot <- ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ species, scales = "free") + 
-  ylab("Concentration") + 
-  xlab("Contaminant Type") +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
   theme_classic() + 
   theme(strip.text.x = element_text(size = 15, color = "black"),
         axis.title.x = element_text(size = 15,
                                     vjust = -0.5),
         axis.title.y = element_text(size = 15,
                                     vjust = 1),
-        axis.text.x = element_text(size = 10,
+        axis.text.x = element_text(size = 15,
                                    angle = 45, 
                                    hjust = 1), 
-        axis.text.y = element_text(size = 10,
+        axis.text.y = element_text(size = 15,
                                    hjust = 1,
                                    vjust = 0.5,
                                    color = "black"), 
@@ -369,9 +375,15 @@ spe_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentrati
 # Exporting plot 
 ggsave(paste0(getwd(), "/spe_boxplot.png"), 
        spe_boxplot,
-       dpi = 320,
-       height = 10)
+       dpi = 320)
 
-# Scatter plot metals, PBDE, PFAS, OPE ------------------------------------
+# Scatter plot with ellipses metals, PBDE, PFAS, OPE ------------------------------------
 
+# Ellipse by groups
+p <- ggplot(sum_4_conta_data, aes(x = metals, 
+                                  y = Total_PBDE)) +
+  geom_point(aes(color = Sex))
+p
+# Change the type of ellipses: possible values are "t", "norm", "euclid"
+# p + stat_ellipse()
 
