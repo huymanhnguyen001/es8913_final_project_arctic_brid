@@ -242,12 +242,12 @@ data <- data %>%
 
 # Extracting 4 best groups of contaminant: metals, PBDE, PFAS, OPE --------
 
-sum_4_conta_data <- select(data, species, Sex, Collection.Location, 
+sum_4_conta_data <- select(data, Tissue, species, Sex, Collection.Location, 
                            Total_PBDE, metals, Total_PFAS, Total_OPE)
 
 # Scale data to reduce outlier effect
 sum_4_conta_scale_data <- copy(sum_4_conta_data)
-sum_4_conta_scale_data[4:7] <- scale(sum_4_conta_scale_data[4:7])
+sum_4_conta_scale_data[5:8] <- scale(sum_4_conta_scale_data[5:8])
 
 
 # Pivot longer --------------------------------------------------------------
@@ -259,9 +259,37 @@ long_scale_df <- pivot_longer(sum_4_conta_scale_data,
 
 # Visualize Data Distribution ---------------------------------------------
 
+# Facet box plots Tissue -------------------------------------------------
+
+tissue_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Tissue, scales = "free") + 
+  ylab("Concentration") + 
+  xlab("Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 10,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 10,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.position = "bottom")
+
+# Exporting plot 
+ggsave(paste0(getwd(), "/tissue_boxplot.png"), 
+       tissue_boxplot,
+       dpi = 320,
+       height = 10)
+
 # Facet box plots Location---------------------------------------------------------
 
-ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+location_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ Collection.Location, scales = "free") + 
   ylab("Concentration") + 
@@ -281,10 +309,16 @@ ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) +
                                    color = "black"), 
         legend.position = "bottom")
 
+# Exporting plot 
+ggsave(paste0(getwd(), "/location_boxplot.png"), 
+       location_boxplot,
+       dpi = 320,
+       height = 10)
+
 
 # Facet box plots Sex -----------------------------------------------------
 
-ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+sex_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ Sex, scales = "free") + 
   ylab("Concentration") + 
@@ -304,9 +338,15 @@ ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) +
                                    color = "black"), 
         legend.position = "bottom")
 
+# Exporting plot 
+ggsave(paste0(getwd(), "/sex_boxplot.png"), 
+       sex_boxplot,
+       dpi = 320,
+       height = 10)
+
 # Facet box plots Species -------------------------------------------------
 
-ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
+spe_boxplot <- ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +
   facet_wrap( ~ species, scales = "free") + 
   ylab("Concentration") + 
@@ -326,6 +366,11 @@ ggplot(data = long_scale_df, aes(x = Contaminant, y = Concentration)) +
                                    color = "black"), 
         legend.position = "bottom")
 
+# Exporting plot 
+ggsave(paste0(getwd(), "/spe_boxplot.png"), 
+       spe_boxplot,
+       dpi = 320,
+       height = 10)
 
 # Scatter plot metals, PBDE, PFAS, OPE ------------------------------------
 
