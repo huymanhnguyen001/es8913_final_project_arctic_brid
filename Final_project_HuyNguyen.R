@@ -272,6 +272,11 @@ long_df <- pivot_longer(sum_4_conta_data,
                         names_to = "Contaminant",
                         values_to = "Concentration")
 
+long_df_metals <- filter(long_df, Contaminant == "metals")
+long_df_PBDE <- filter(long_df, Contaminant == "Total_PBDE")
+long_df_PFAS <- filter(long_df, Contaminant == "Total_PFAS")
+long_df_OPE <- filter(long_df, Contaminant == "Total_OPE")
+
 long_scale_df <- pivot_longer(sum_4_conta_scale_data,
                         cols = c("metals", "Total_PBDE", 
                                  "Total_PFAS", "Total_OPE"),
@@ -510,7 +515,7 @@ wilcox_test_tissue <- function(nrow, ncol, ) {
 tissue_metals_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
 colnames(tissue_metals_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
 rownames(tissue_metals_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
-long_df_metals <- filter(long_df, Contaminant == "metals")
+
 
 for (i in rownames(tissue_metals_matrix)) {
   for (j in colnames(tissue_metals_matrix)) {
@@ -525,7 +530,7 @@ for (i in rownames(tissue_metals_matrix)) {
 tissue_PBDE_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
 colnames(tissue_PBDE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
 rownames(tissue_PBDE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
-long_df_PBDE <- filter(long_df, Contaminant == "Total_PBDE")
+
 
 for (i in rownames(tissue_PBDE_matrix)) {
   for (j in colnames(tissue_PBDE_matrix)) {
@@ -540,7 +545,7 @@ for (i in rownames(tissue_PBDE_matrix)) {
 tissue_PFAS_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
 colnames(tissue_PFAS_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
 rownames(tissue_PFAS_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
-long_df_PFAS <- filter(long_df, Contaminant == "Total_PFAS")
+
 
 for (i in rownames(tissue_PFAS_matrix)) {
   for (j in colnames(tissue_PFAS_matrix)) {
@@ -555,7 +560,7 @@ for (i in rownames(tissue_PFAS_matrix)) {
 tissue_OPE_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
 colnames(tissue_OPE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
 rownames(tissue_OPE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
-long_df_OPE <- filter(long_df, Contaminant == "Total_OPE")
+
 
 for (i in rownames(tissue_OPE_matrix)) {
   for (j in colnames(tissue_OPE_matrix)) {
@@ -566,9 +571,178 @@ for (i in rownames(tissue_OPE_matrix)) {
   }
 }
 
-## Species
 
-## Sex
+# Species ~ Metals --------------------------------------------------------
+species_metals_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_metals_matrix) <- c("BLKI", "NOFU")
+rownames(species_metals_matrix) <- c("BLKI", "NOFU")
 
-## Location
+for (i in rownames(species_metals_matrix)) {
+  for (j in colnames(species_metals_matrix)) {
+    subset_df_metals_1 <- filter(long_df_metals, species == i)
+    subset_df_metals_2 <- filter(long_df_metals, species == j)
+    species_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                             y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Species ~ PBDE ----------------------------------------------------------
+species_PBDE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_PBDE_matrix) <- c("BLKI", "NOFU")
+rownames(species_PBDE_matrix) <- c("BLKI", "NOFU")
+
+for (i in rownames(species_PBDE_matrix)) {
+  for (j in colnames(species_PBDE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PBDE, species == i)
+    subset_df_metals_2 <- filter(long_df_PBDE, species == j)
+    species_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                              y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Species ~ PFAS ----------------------------------------------------------
+species_PFAS_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_PFAS_matrix) <- c("BLKI", "NOFU")
+rownames(species_PFAS_matrix) <- c("BLKI", "NOFU")
+
+for (i in rownames(species_PFAS_matrix)) {
+  for (j in colnames(species_PFAS_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PFAS, species == i)
+    subset_df_metals_2 <- filter(long_df_PFAS, species == j)
+    species_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                              y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Species ~ OPE -----------------------------------------------------------
+species_OPE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_OPE_matrix) <- c("BLKI", "NOFU")
+rownames(species_OPE_matrix) <- c("BLKI", "NOFU")
+
+for (i in rownames(species_OPE_matrix)) {
+  for (j in colnames(species_OPE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_OPE, species == i)
+    subset_df_metals_2 <- filter(long_df_OPE, species == j)
+    species_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                              y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Sex ~ Metals ------------------------------------------------------------
+sex_metals_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_metals_matrix) <- c("Male", "Female")
+rownames(sex_metals_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_metals_matrix)) {
+  for (j in colnames(sex_metals_matrix)) {
+    subset_df_metals_1 <- filter(long_df_metals, Sex == i)
+    subset_df_metals_2 <- filter(long_df_metals, Sex == j)
+    sex_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                           y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Sex ~ PBDE --------------------------------------------------------------
+sex_PBDE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_PBDE_matrix) <- c("Male", "Female")
+rownames(sex_PBDE_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_PBDE_matrix)) {
+  for (j in colnames(sex_PBDE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PBDE, Sex == i)
+    subset_df_metals_2 <- filter(long_df_PBDE, Sex == j)
+    sex_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                          y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Sex ~ PFAS --------------------------------------------------------------
+sex_PFAS_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_PFAS_matrix) <- c("Male", "Female")
+rownames(sex_PFAS_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_PFAS_matrix)) {
+  for (j in colnames(sex_PFAS_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PFAS, Sex == i)
+    subset_df_metals_2 <- filter(long_df_PFAS, Sex == j)
+    sex_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                          y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Sex ~ OPE ---------------------------------------------------------------
+sex_OPE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_OPE_matrix) <- c("Male", "Female")
+rownames(sex_OPE_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_OPE_matrix)) {
+  for (j in colnames(sex_OPE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_OPE, Sex == i)
+    subset_df_metals_2 <- filter(long_df_OPE, Sex == j)
+    sex_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                          y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Location ~ Metals -------------------------------------------------------
+location_metals_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_metals_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_metals_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_metals_matrix)) {
+  for (j in colnames(location_metals_matrix)) {
+    subset_df_metals_1 <- filter(long_df_metals, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_metals, Collection.Location == j)
+    location_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                       y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Location ~ PBDE ---------------------------------------------------------
+location_PBDE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_PBDE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_PBDE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_PBDE_matrix)) {
+  for (j in colnames(location_PBDE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PBDE, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_PBDE, Collection.Location == j)
+    location_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                               y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Location ~ PFAS ---------------------------------------------------------
+location_PFAS_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_PFAS_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_PFAS_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_PFAS_matrix)) {
+  for (j in colnames(location_PFAS_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PFAS, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_PFAS, Collection.Location == j)
+    location_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                               y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Location ~ OPE ----------------------------------------------------------
+location_OPE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_OPE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_OPE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_OPE_matrix)) {
+  for (j in colnames(location_OPE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_OPE, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_OPE, Collection.Location == j)
+    location_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                               y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
 
