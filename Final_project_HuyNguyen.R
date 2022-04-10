@@ -246,6 +246,12 @@ data <- data %>%
 sum_4_conta_data <- select(data, Tissue, species, Sex, Collection.Location, 
                            Total_PBDE, metals, Total_PFAS, Total_OPE)
 
+#Replace zero with NA values
+sum_4_conta_data_copy <- copy(sum_4_conta_data)
+sum_4_conta_data_copy$Total_PBDE[sum_4_conta_data_copy$Total_PBDE == 0] <- NA
+sum_4_conta_data_copy$metals[sum_4_conta_data_copy$metals == 0] <- NA
+sum_4_conta_data_copy$Total_PFAS[sum_4_conta_data_copy$Total_PFAS == 0] <- NA
+sum_4_conta_data_copy$Total_OPE[sum_4_conta_data_copy$Total_OPE == 0] <- NA
 
 # Option 1. Replace zero values with a value that is 0.5*LOD  -------------
 sum_4_conta_data_LOD <- copy(sum_4_conta_data)
@@ -961,13 +967,13 @@ ggsave(paste0(getwd(), "/species_boxplot_clean.png"),
 
 # Scatter plot Tissue, Species, Sex, Location ------------------------------------
 
-# Tissue ------------------------------------------------------------------
-metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals, 
+# Tissue with non-detects------------------------------------------------------------------
+metal_PBDE <- ggplot(sum_4_conta_data_LOD, aes(x = metals, 
                                            y = Total_PBDE)) +
   geom_point(aes(color = Tissue)) +
   labs(title = "metal vs. PBDE")
 
-metal_PFAS <- ggplot(sum_4_conta_data, aes(x = metals, 
+metal_PFAS <- ggplot(sum_4_conta_data_LOD, aes(x = metals, 
                                            y = Total_PFAS)) +
   geom_point(aes(color = Tissue)) +
   labs(title = "metal vs. PFAS")
@@ -988,7 +994,27 @@ ggsave(paste0(getwd(), "/scatter_plot_tissue.png"),
        scatter_plot_tissue,
        dpi = 480)
 
-# Species -----------------------------------------------------------------
+# Tissue without non-detects ----------------------------------------------
+metal_PBDE_clean_scatter <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+                                                         y = Total_PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE")
+
+metal_PFAS_clean_scatter <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+                                               y = Total_PFAS)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PFAS")
+
+scatter_plot_tissue_clean <- ggarrange(metal_PBDE_clean_scatter, metal_PFAS_clean_scatter, 
+                                 ncol=2, 
+                                 common.legend = TRUE,
+                                 legend = "right")
+
+ggsave(paste0(getwd(), "/scatter_plot_tissue_clean.png"), 
+       scatter_plot_tissue_clean,
+       dpi = 480)
+  
+# Species with non-detects-----------------------------------------------------------------
 metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals, 
                                            y = Total_PBDE)) +
   geom_point(aes(color = species)) +
@@ -1005,7 +1031,7 @@ metal_OPE <- ggplot(sum_4_conta_data, aes(x = metals,
   labs(title = "metal vs. OPE")
 
 
-scatter_plot_species <- ggarrange(metal_PBDE, OPE_PBDE, metal_PFAS, 
+scatter_plot_species <- ggarrange(metal_PBDE, OPE_PBDE, metal_OPE, 
                                  ncol=3, 
                                  common.legend = TRUE,
                                  legend = "bottom")
@@ -1015,7 +1041,33 @@ ggsave(paste0(getwd(), "/scatter_plot_species.png"),
        dpi = 480)
 
 
-# Location ---------------------------------------------------------------------
+# Species without non-detects ---------------------------------------------
+metal_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE")
+
+OPE_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = Total_OPE,
+                                         y = Total_PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "OPE vs. PBDE")
+
+metal_OPE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. OPE")
+
+
+scatter_plot_species_clean <- ggarrange(metal_PBDE_clean, OPE_PBDE_clean, metal_OPE_clean, 
+                                  ncol=3, 
+                                  common.legend = TRUE,
+                                  legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_species_clean.png"), 
+       scatter_plot_species_clean,
+       dpi = 480)
+
+# Location with non-detects---------------------------------------------------------------------
 metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals,
                                            y = Total_PBDE)) +
   geom_point(aes(color = Collection.Location)) +
@@ -1040,7 +1092,33 @@ ggsave(paste0(getwd(), "/scatter_plot_location.png"),
        scatter_plot_location,
        dpi = 480)
 
-# Sex ----------------------------------------------------------------
+
+# Location without non-detects --------------------------------------------
+metal_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. PBDE")
+
+metal_OPE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. OPE")
+
+metal_PFAS_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PFAS)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. PFAS")
+
+scatter_plot_location_clean <- ggarrange(metal_PBDE_clean, metal_OPE_clean, metal_PFAS_clean, 
+                                   ncol=3, 
+                                   common.legend = TRUE,
+                                   legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_location_clean.png"), 
+       scatter_plot_location_clean,
+       dpi = 480)
+
+# Sex with non-detects----------------------------------------------------------------
 metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals,
                                           y = Total_PBDE)) +
   geom_point(aes(color = Sex)) +
@@ -1063,6 +1141,31 @@ scatter_plot_sex <- ggarrange(metal_PBDE, metal_OPE, metal_PFAS,
 
 ggsave(paste0(getwd(), "/scatter_plot_sex.png"), 
        scatter_plot_sex,
+       dpi = 480)
+
+# Sex without non-detects -------------------------------------------------
+metal_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. PBDE")
+
+metal_OPE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. OPE")
+
+metal_PFAS_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. PFAS")
+
+scatter_plot_sex_clean <- ggarrange(metal_PBDE_clean, metal_OPE_clean, metal_PFAS_clean, 
+                              ncol=3, 
+                              common.legend = TRUE,
+                              legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_sex_clean.png"), 
+       scatter_plot_sex_clean,
        dpi = 480)
 
 
