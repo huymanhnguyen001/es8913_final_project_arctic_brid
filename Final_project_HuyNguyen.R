@@ -1169,6 +1169,18 @@ ggsave(paste0(getwd(), "/scatter_plot_sex_clean.png"),
        dpi = 480)
 
 
+# Bar plot frequency of non-detects  --------------------------------------
+PBDE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PBDE))
+metals_nondetect <- sum(is.na(sum_4_conta_data_copy$metals))
+PFAS_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PFAS))
+OPE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_OPE))
+nondetect_df <- data.frame(Contaminant = c("metals", "PBDE", "PFAS", "OPE"),
+                           Nondetects_quantity = c(metals_nondetect,
+                                                   PBDE_nondetect,
+                                                   PFAS_nondetect,
+                                                   OPE_nondetect))
+non_detect_barplot <- 
+
 # Mann-Whitney test -------------------------------------------------------
 
 wilcox_test_tissue <- function(nrow, ncol, ) {
