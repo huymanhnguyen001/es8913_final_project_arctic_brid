@@ -1170,16 +1170,32 @@ ggsave(paste0(getwd(), "/scatter_plot_sex_clean.png"),
 
 
 # Bar plot frequency of non-detects  --------------------------------------
-PBDE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PBDE))
-metals_nondetect <- sum(is.na(sum_4_conta_data_copy$metals))
-PFAS_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PFAS))
-OPE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_OPE))
+PBDE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PBDE))/130
+metals_nondetect <- sum(is.na(sum_4_conta_data_copy$metals))/130
+PFAS_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PFAS))/130
+OPE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_OPE))/130
 nondetect_df <- data.frame(Contaminant = c("metals", "PBDE", "PFAS", "OPE"),
                            Nondetects_quantity = c(metals_nondetect,
                                                    PBDE_nondetect,
                                                    PFAS_nondetect,
                                                    OPE_nondetect))
-non_detect_barplot <- 
+
+# Summarize percentage of non-detects by Tissue/Species/Sex/Location ----------------------
+sum_4_conta_data_copy %>%
+  group_by(Collection.Location) %>%
+  summarise(count_non_detects = sum(is.na(Total_OPE))/130*100)
+  
+
+
+# non_detect_barplot <- ggplot(data = nondetect_df,
+#                              aes(x = Contaminant,
+#                                  y = Nondetects_quantity)) + 
+#   geom_bar(aes(fill = Contaminant),
+#            stat = "identity")
+# 
+# ggsave(paste0(getwd(), "/non_detect_barplot.png"), 
+#        non_detect_barplot,
+#        dpi = 480)
 
 # Mann-Whitney test -------------------------------------------------------
 
