@@ -1026,10 +1026,8 @@ for (i in tissue1){
 
 
 
+# Facet box plots ---------------------------------------------------------
 
-
-# facet boxplots template
-  # feel free to update the theme/colourings, etc.
 
 ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
   geom_boxplot(aes(fill = Contaminant)) +

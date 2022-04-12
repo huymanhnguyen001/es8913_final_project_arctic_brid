@@ -1,17 +1,14 @@
 # Loading packages --------------------------------------------------------
 library(ggplot2)
+library(ggpubr)
+library(data.table)
 library(viridis)
 library(wesanderson)
 library(scales)
 library(gridExtra)
 library(tidyverse)
-library(lubridate)
-library(pillar)
 library(dplyr)
-library(zoo)
-library(float)
 library(vegan)
-library(ape)
 library(rmarkdown) 
 library(knitr)
 library(FactoMineR)
@@ -20,6 +17,17 @@ library(factoextra)
 # Data Import and Manipulation -------------------------------------------------------
 
 data <- read.csv(paste0(getwd(), "./contaminant_database.csv"))
+
+# Change name of Sex variable
+
+for (i in 1:dim(data)[1]) {
+  if (data$Sex[i] == "F") {
+    data$Sex[i] <- "Female"
+  }
+  else {
+    data$Sex[i] <- "Male"
+  }
+}
 
 # Adding sum columns ------------------------------------------------------
 
@@ -233,304 +241,1201 @@ data <- data %>%
                X1.2.4.5_Tetrachlorobenzene_1.2.3.5_Tetrachlorobenzene, na.rm = TRUE))
 
 
+# Extracting 4 best groups of contaminant: metals, PBDE, PFAS, OPE --------
+
+sum_4_conta_data <- select(data, Tissue, species, Sex, Collection.Location, 
+                           Total_PBDE, metals, Total_PFAS, Total_OPE)
+
+#Replace zero with NA values
+sum_4_conta_data_copy <- copy(sum_4_conta_data)
+sum_4_conta_data_copy$Total_PBDE[sum_4_conta_data_copy$Total_PBDE == 0] <- NA
+sum_4_conta_data_copy$metals[sum_4_conta_data_copy$metals == 0] <- NA
+sum_4_conta_data_copy$Total_PFAS[sum_4_conta_data_copy$Total_PFAS == 0] <- NA
+sum_4_conta_data_copy$Total_OPE[sum_4_conta_data_copy$Total_OPE == 0] <- NA
+
+# Option 1. Replace zero values with a value that is 0.5*LOD  -------------
+sum_4_conta_data_LOD <- copy(sum_4_conta_data)
+sum_4_conta_data_LOD$Total_PBDE[sum_4_conta_data$Total_PBDE == 0] <- runif(sum(sum_4_conta_data$Total_PBDE == 0),
+                                             min = 0.0145000,
+                                             max=0.0155000)
+sum_4_conta_data_LOD$metals[sum_4_conta_data$metals == 0] <- runif(sum(sum_4_conta_data$metals == 0),
+                                                 min = 0.0145000,
+                                                 max=0.0155000)
+sum_4_conta_data_LOD$Total_PFAS[sum_4_conta_data$Total_PFAS == 0] <- runif(sum(sum_4_conta_data$Total_PFAS == 0),
+                                             min = 0.0145000,
+                                             max=0.0155000)
+sum_4_conta_data_LOD$Total_OPE[sum_4_conta_data$Total_OPE == 0] <- runif(sum(sum_4_conta_data$Total_OPE == 0),
+                                           min = 0.0145000,
+                                           max=0.0155000)
+
+# Option 2. REMOVING all zero values --------------------------------------
+sum_4_conta_data_metals_clean <- sum_4_conta_data %>%
+  filter(metals > 0) 
+sum_4_conta_data_PBDE_clean <- sum_4_conta_data %>%
+  filter(Total_PBDE > 0) 
+sum_4_conta_data_PFAS_clean <- sum_4_conta_data %>%
+  filter(Total_PFAS > 0) 
+sum_4_conta_data_OPE_clean <- sum_4_conta_data %>%
+  filter(Total_OPE > 0) 
+
+  
+# Scale data to reduce outlier effect -------------------------------------
+sum_4_conta_scale_data <- copy(sum_4_conta_data)
+sum_4_conta_scale_data[5:8] <- scale(sum_4_conta_scale_data[5:8])
+
 # Pivot longer --------------------------------------------------------------
+long_df <- pivot_longer(sum_4_conta_data_LOD,
+                        cols = c("metals", "Total_PBDE", 
+                                 "Total_PFAS", "Total_OPE"),
+                        names_to = "Contaminant",
+                        values_to = "Concentration")
 
-data_metal <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         Lead, 
-         Chromium, 
-         Arsenic,
-         Cadmium, 
-         Copper, 
-         Manganese, 
-         Rubidium, 
-         Aluminum, 
-         Mercury, 
-         Molybdenum, 
-         Nickel, 
-         Lithium, 
-         Strontium, 
-         Boron, 
-         Cobalt,
-         Bismuth, 
-         Silver)
+long_df_metals_clean<- pivot_longer(sum_4_conta_data_metals_clean,
+                                    cols = c("metals", "Total_PBDE", 
+                                             "Total_PFAS", "Total_OPE"),
+                                    names_to = "Contaminant",
+                                    values_to = "Concentration")
 
-data_metal_longer <- data_metal %>%
-  pivot_longer(cols = c("Lead", 
-                        "Chromium", 
-                        "Arsenic",
-                        "Cadmium", 
-                        "Copper", 
-                        "Manganese", 
-                        "Rubidium", 
-                        "Aluminum", 
-                        "Mercury", 
-                        "Molybdenum", 
-                        "Nickel", 
-                        "Lithium", 
-                        "Strontium", 
-                        "Boron", 
-                        "Cobalt",
-                        "Bismuth", 
-                        "Silver"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
+long_df_PBDE_clean <- pivot_longer(sum_4_conta_data_PBDE_clean,
+                                   cols = c("metals", "Total_PBDE", 
+                                            "Total_PFAS", "Total_OPE"),
+                                   names_to = "Contaminant",
+                                   values_to = "Concentration")
 
-data_PBDE <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         BDE17_Kim,
-         BDE28_Kim,
-         BDE47_Kim,
-         BDE49_Kim,
-         BDE66_Kim,
-         BDE85_Kim,
-         BDE99_Kim,
-         BDE100_Kim,
-         BDE138_Kim,
-         BDE153_Kim,
-         BDE154_BB153_Kim,
-         BDE183_Kim,
-         BDE190_Kim,
-         BDE209_Kim,
-         BDE100_Rob,
-         BDE119_Rob,
-         BDE138_Rob,
-         BDE15_Rob,
-         BDE153_Rob,
-         BDE154_Rob,
-         BDE17_Rob,
-         BDE181_Rob,
-         BDE183_Rob,
-         BDE203_Rob,
-         BDE205_Rob,
-         BDE206_Rob,
-         BDE207_Rob,
-         BDE209_Rob,
-         BDE28_Rob,
-         BDE3_Rob,
-         BDE47_Rob,
-         BDE49_Rob,
-         BDE66_Rob,
-         BDE7_Rob,
-         BDE71_Rob,
-         BDE77_Rob,
-         BDE85_BDE155_Rob,
-         BDE99_Rob)
+long_df_PFAS_clean <- pivot_longer(sum_4_conta_data_PFAS_clean,
+                                   cols = c("metals", "Total_PBDE", 
+                                            "Total_PFAS", "Total_OPE"),
+                                   names_to = "Contaminant",
+                                   values_to = "Concentration")
 
-data_PBDE_longer <- data_PBDE %>%
-  pivot_longer(cols = c("BDE17_Kim",
-                        "BDE28_Kim",
-                        "BDE47_Kim",
-                        "BDE49_Kim",
-                        "BDE66_Kim",
-                        "BDE85_Kim",
-                        "BDE99_Kim",
-                        "BDE100_Kim",
-                        "BDE138_Kim",
-                        "BDE153_Kim",
-                        "BDE154_BB153_Kim",
-                        "BDE183_Kim",
-                        "BDE190_Kim",
-                        "BDE209_Kim",
-                        "BDE100_Rob",
-                        "BDE119_Rob",
-                        "BDE138_Rob",
-                        "BDE15_Rob",
-                        "BDE153_Rob",
-                        "BDE154_Rob",
-                        "BDE17_Rob",
-                        "BDE181_Rob",
-                        "BDE183_Rob",
-                        "BDE203_Rob",
-                        "BDE205_Rob",
-                        "BDE206_Rob",
-                        "BDE207_Rob",
-                        "BDE209_Rob",
-                        "BDE28_Rob",
-                        "BDE3_Rob",
-                        "BDE47_Rob",
-                        "BDE49_Rob",
-                        "BDE66_Rob",
-                        "BDE7_Rob",
-                        "BDE71_Rob",
-                        "BDE77_Rob",
-                        "BDE85_BDE155_Rob",
-                        "BDE99_Rob"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
+long_df_OPE_clean <- pivot_longer(sum_4_conta_data_OPE_clean,
+                                  cols = c("metals", "Total_PBDE", 
+                                           "Total_PFAS", "Total_OPE"),
+                                  names_to = "Contaminant",
+                                  values_to = "Concentration")
 
-data_PFAS <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         FBSA._Rob,
-         FOSA._Rob,
-         N_MeFOSA._Rob,
-         N_EtFOSA._Rob,
-         PFEtCHxS._Rob,
-         PFBS._Rob,
-         PFHxS._Rob,
-         PFOS._Rob,
-         PFDS._Rob,
-         PFBA._Rob,
-         PFPeA._Rob,
-         PFHxA._Rob,
-         PFHpA._Rob,
-         PFOA._Rob,
-         PFNA._Rob,
-         PFDA._Rob,
-         PFUdA._Rob,
-         PFDoA._Rob,
-         PFTrDA._Rob,
-         PFTeDA._Rob,
-         PFHxDA._Rob,
-         PFODA._Rob)
+# long_df_metals <- filter(long_df, Contaminant == "metals")
+# long_df_PBDE <- filter(long_df, Contaminant == "Total_PBDE")
+# long_df_PFAS <- filter(long_df, Contaminant == "Total_PFAS")
+# long_df_OPE <- filter(long_df, Contaminant == "Total_OPE")
 
-data_PFAS_longer <- data_PFAS %>%
-  pivot_longer(cols = c("FBSA._Rob",
-                        "FOSA._Rob",
-                        "N_MeFOSA._Rob",
-                        "N_EtFOSA._Rob",
-                        "PFEtCHxS._Rob",
-                        "PFBS._Rob",
-                        "PFHxS._Rob",
-                        "PFOS._Rob",
-                        "PFDS._Rob",
-                        "PFBA._Rob",
-                        "PFPeA._Rob",
-                        "PFHxA._Rob",
-                        "PFHpA._Rob",
-                        "PFOA._Rob",
-                        "PFNA._Rob",
-                        "PFDA._Rob",
-                        "PFUdA._Rob",
-                        "PFDoA._Rob",
-                        "PFTrDA._Rob",
-                        "PFTeDA._Rob",
-                        "PFHxDA._Rob",
-                        "PFODA._Rob"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
-
-data_OPE <- data %>%
-  select(Tissue,
-         Bird_ID,
-         Element,
-         USOX,
-         species,
-         Sex,
-         Collection.Date,
-         Collection.Location,
-         TEP,
-         TPrP,
-         TNBP,
-         TBOEP,
-         TEHP,
-         TCEP,
-         TCIPP,
-         TDCIPP,
-         BCMP_BCEP,
-         T2B4MP,
-         T3B4MP,
-         T4B3MP,
-         TDBPP,
-         TTBNPP,
-         TPHP,
-         EHDPP,
-         TMPP)
-
-data_OPE_longer <- data_OPE %>%
-  pivot_longer(cols = c("TEP",
-                        "TPrP",
-                        "TNBP",
-                        "TBOEP",
-                        "TEHP",
-                        "TCEP",
-                        "TCIPP",
-                        "TDCIPP",
-                        "BCMP_BCEP",
-                        "T2B4MP",
-                        "T3B4MP",
-                        "T4B3MP",
-                        "TDBPP",
-                        "TTBNPP",
-                        "TPHP",
-                        "EHDPP",
-                        "TMPP"),
-               names_to = "contaminant",
-               values_to = "value",
-               values_drop_na = TRUE) 
-
-# Check percentage of non-NA and non-zero values in each group of contaminants 
-# data_OCP_longer_non_zero <- data_OCP_longer %>%
-#   filter(value > 0)
-# 
-# sum(!is.na(data_metals_longer_non_zero$value))/sum(!is.na(data_metals_longer$value))
-
+long_scale_df <- pivot_longer(sum_4_conta_scale_data,
+                        cols = c("metals", "Total_PBDE", 
+                                 "Total_PFAS", "Total_OPE"),
+                        names_to = "Contaminant",
+                        values_to = "Concentration")
 
 # Visualize Data Distribution ---------------------------------------------
-# Box plots
 
-metal_boxplot <- ggplot(data = data_metal_longer,
-                        aes(x = contaminant,
-                            y = value,
-                            fill = Tissue)) +
-                geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+# Facet box plots Tissue with non-detects -------------------------------------------------
+tissue_boxplot_metals <- ggplot(data = filter(long_df, Contaminant == "metals"), 
+                                aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
 
-PBDE_boxplot <- ggplot(data = data_PBDE_longer,
-                       aes(x = contaminant,
-                           y = value,
-                           fill = Tissue)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+tissue_boxplot_PBDE <- ggplot(data = filter(long_df, Contaminant == "Total_PBDE"), 
+                              aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
 
-PFAS_boxplot <- ggplot(data = data_PFAS_longer,
-                       aes(x = contaminant,
-                           y = value,
-                           fill = Tissue,
-                           colour = Collection.Location)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+tissue_boxplot_PFAS <- ggplot(data = filter(long_df, Contaminant == "Total_PFAS"), 
+                              aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
 
-OPE_boxplot <- ggplot(data = data_OPE_longer,
-                       aes(x = contaminant,
-                           y = value,
-                           fill = Tissue,
-                           colour = Collection.Location)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+tissue_boxplot_OPE <- ggplot(data = filter(long_df, Contaminant == "Total_OPE"), 
+                                aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
 
-ggsave(paste0(getwd(), "/metal_boxplot.png"), 
-       metal_boxplot,
+# Exporting plot 
+ggsave(paste0(getwd(), "/tissue_boxplot_metals.png"), 
+       tissue_boxplot_metals,
+       dpi = 480, 
+       height = 10)
+ggsave(paste0(getwd(), "/tissue_boxplot_PBDE.png"), 
+       tissue_boxplot_PBDE,
+       dpi = 480, 
+       height = 10)
+ggsave(paste0(getwd(), "/tissue_boxplot_PFAS.png"), 
+       tissue_boxplot_PFAS,
+       dpi = 480, 
+       height = 10)
+ggsave(paste0(getwd(), "/tissue_boxplot_OPE.png"), 
+       tissue_boxplot_OPE,
+       dpi = 480, 
+       height = 10)
+
+
+
+# Facet box plots Tissue without non-detects --------------------------------
+tissue_boxplot_metals_clean <- ggplot(data = filter(long_df_metals_clean, 
+                                                    Contaminant == "metals"), 
+                                aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
+
+tissue_boxplot_PBDE_clean <- ggplot(data = filter(long_df_PBDE_clean, 
+                                                  Contaminant == "Total_PBDE"), 
+                              aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
+
+tissue_boxplot_PFAS_clean <- ggplot(data = filter(long_df_PFAS_clean, 
+                                                  Contaminant == "Total_PFAS"), 
+                              aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
+
+tissue_boxplot_OPE_clean <- ggplot(data = filter(long_df_OPE_clean, 
+                                                 Contaminant == "Total_OPE"), 
+                             aes(x = Tissue, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 25, color = "black"),
+        axis.title.x = element_text(size = 25,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 25,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 25,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 25,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=25), 
+        legend.text = element_text(size=25),
+        legend.position = "hidden")
+
+# Exporting plot 
+ggsave(paste0(getwd(), "/tissue_boxplot_metals_clean.png"), 
+       tissue_boxplot_metals_clean,
+       dpi = 480, 
+       height = 10)
+ggsave(paste0(getwd(), "/tissue_boxplot_PBDE_clean.png"), 
+       tissue_boxplot_PBDE_clean,
+       dpi = 480, 
+       height = 10)
+ggsave(paste0(getwd(), "/tissue_boxplot_PFAS_clean.png"), 
+       tissue_boxplot_PFAS_clean,
+       dpi = 480, 
+       height = 10)
+ggsave(paste0(getwd(), "/tissue_boxplot_OPE_clean.png"), 
+       tissue_boxplot_OPE_clean,
+       dpi = 480, 
+       height = 10)
+
+# Facet box plots Location with non-detects---------------------------------------------------------
+
+location_boxplot <- ggplot(data = long_df, aes(x = Collection.Location, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Location") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+# Exporting plot 
+ggsave(paste0(getwd(), "/location_boxplot_2.png"), 
+       location_boxplot,
+       dpi = 480, 
+       height = 10, 
+       width = 10)
+
+
+# Facet box plots Location without non-detects ----------------------------
+location_boxplot_metal_clean <- ggplot(data = filter(long_df_metals_clean, 
+                                                            Contaminant == "metals"), 
+                                       aes(x = Collection.Location, 
+                                               y = Concentration)) + 
+  geom_boxplot(aes(fill = Collection.Location)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Location",
+       title = "Metals") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+location_boxplot_PBDE_clean <- ggplot(data = filter(long_df_PBDE_clean, 
+                                                      Contaminant == "Total_PBDE"), 
+                                       aes(x = Collection.Location, 
+                                           y = Concentration)) + 
+  geom_boxplot(aes(fill = Collection.Location)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Location",
+       title = "PBDE") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+location_boxplot_PFAS_clean <- ggplot(data = filter(long_df_PFAS_clean, 
+                                                            Contaminant == "Total_PFAS"), 
+                                       aes(x = Collection.Location, 
+                                           y = Concentration)) + 
+  geom_boxplot(aes(fill = Collection.Location)) +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Location",
+       title = "PFAS") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+location_boxplot_OPE_clean <- ggplot(data = filter(long_df_OPE_clean, 
+                                                            Contaminant == "Total_OPE"), 
+                                       aes(x = Collection.Location, 
+                                           y = Concentration)) + 
+  geom_boxplot(aes(fill = Collection.Location)) +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Location",
+       title = "OPE") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+location_boxplot_clean <- ggarrange(location_boxplot_metal_clean,
+                                    location_boxplot_OPE_clean,
+                                    location_boxplot_PBDE_clean,
+                                    location_boxplot_PFAS_clean,
+                                    ncol = 2, 
+                                    nrow = 2)
+
+ggsave(paste0(getwd(), "/location_boxplot_clean.png"), 
+       location_boxplot_clean,
+       dpi = 480, 
+       height = 10, 
+       width = 10)
+
+# Facet box plots Sex with non-detects-----------------------------------------------------
+
+sex_boxplot <- ggplot(data = long_df, aes(x = Sex, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Contaminant Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+# Exporting plot 
+ggsave(paste0(getwd(), "/sex_boxplot_2.png"), 
+       sex_boxplot,
        dpi = 320,
-       width = 10,
-       height = 5)
+       height = 10)
 
-# PCA Analysis ------------------------------------------------------------
 
-res.pca <- PCA(decathlon2.active, graph = FALSE)
-fviz_contrib(res.pca, choice = "var", axes = 1:2, top = 10)
-fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 100))
+# Facet box plots Sex without non-detects ---------------------------------
+sex_boxplot_metal_clean <- ggplot(data = filter(long_df_metals_clean, 
+                                                     Contaminant == "metals"), 
+                                       aes(x = Sex, 
+                                           y = Concentration)) + 
+  geom_boxplot(aes(fill = Sex)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Sex",
+       title = "Metals") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+sex_boxplot_PBDE_clean <- ggplot(data = filter(long_df_PBDE_clean, 
+                                                    Contaminant == "Total_PBDE"), 
+                                      aes(x = Sex, 
+                                          y = Concentration)) + 
+  geom_boxplot(aes(fill = Sex)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Sex",
+       title = "PBDE") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+sex_boxplot_PFAS_clean <- ggplot(data = filter(long_df_PFAS_clean, 
+                                                    Contaminant == "Total_PFAS"), 
+                                      aes(x = Sex, 
+                                          y = Concentration)) + 
+  geom_boxplot(aes(fill = Sex)) +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Sex",
+       title = "PFAS") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+sex_boxplot_OPE_clean <- ggplot(data = filter(long_df_OPE_clean, 
+                                                   Contaminant == "Total_OPE"), 
+                                     aes(x = Sex, 
+                                         y = Concentration)) + 
+  geom_boxplot(aes(fill = Sex)) +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Sex",
+       title = "OPE") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+sex_boxplot_clean <- ggarrange(sex_boxplot_metal_clean,
+                               sex_boxplot_OPE_clean,
+                                    sex_boxplot_PBDE_clean,
+                                    sex_boxplot_PFAS_clean,
+                                    ncol = 2, 
+                                    nrow = 2)
+
+ggsave(paste0(getwd(), "/sex_boxplot_clean.png"), 
+       sex_boxplot_clean,
+       dpi = 480, 
+       height = 10, 
+       width = 10)
+
+# Facet box plots Species with non-detects-------------------------------------------------
+
+spe_boxplot <- ggplot(data = long_df, aes(x = species, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "species") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+# Exporting plot 
+ggsave(paste0(getwd(), "/spe_boxplot_2.png"), 
+       spe_boxplot,
+       dpi = 480,
+       height = 10)
+
+
+# Facet box plots Species without non-detects -----------------------------
+species_boxplot_metal_clean <- ggplot(data = filter(long_df_metals_clean, 
+                                                Contaminant == "metals"), 
+                                  aes(x = species, 
+                                      y = Concentration)) + 
+  geom_boxplot(aes(fill = species)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "species",
+       title = "Metals") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+species_boxplot_PBDE_clean <- ggplot(data = filter(long_df_PBDE_clean, 
+                                               Contaminant == "Total_PBDE"), 
+                                 aes(x = species, 
+                                     y = Concentration)) + 
+  geom_boxplot(aes(fill = species)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "species",
+       title = "PBDE") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+species_boxplot_PFAS_clean <- ggplot(data = filter(long_df_PFAS_clean, 
+                                               Contaminant == "Total_PFAS"), 
+                                 aes(x = species, 
+                                     y = Concentration)) + 
+  geom_boxplot(aes(fill = species)) +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "species",
+       title = "PFAS") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+species_boxplot_OPE_clean <- ggplot(data = filter(long_df_OPE_clean, 
+                                              Contaminant == "Total_OPE"), 
+                                aes(x = species, 
+                                    y = Concentration)) + 
+  geom_boxplot(aes(fill = species)) +
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "species",
+       title = "OPE") +
+  theme_classic() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
+        strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden")
+
+species_boxplot_clean <- ggarrange(species_boxplot_metal_clean,
+                               species_boxplot_OPE_clean,
+                               species_boxplot_PBDE_clean,
+                               species_boxplot_PFAS_clean,
+                               ncol = 2, 
+                               nrow = 2)
+
+ggsave(paste0(getwd(), "/species_boxplot_clean.png"), 
+       species_boxplot_clean,
+       dpi = 480, 
+       height = 10, 
+       width = 10)
+
+# Scatter plot Tissue, Species, Sex, Location ------------------------------------
+
+# Tissue with non-detects------------------------------------------------------------------
+metal_PBDE <- ggplot(sum_4_conta_data_LOD, aes(x = metals, 
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE")
+
+metal_PFAS <- ggplot(sum_4_conta_data_LOD, aes(x = metals, 
+                                           y = Total_PFAS)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PFAS")
+# 
+# metal_OPE <- ggplot(sum_4_conta_data, aes(x = metals, 
+#                                            y = Total_PBDE)) +
+#   geom_point(aes(color = Tissue)) +
+#   labs(title = "metal vs. PBDE")
+# 
+# PBDE_PFAS <- 
+
+scatter_plot_tissue <- ggarrange(metal_PBDE, metal_PFAS, 
+                          ncol=2, 
+                          common.legend = TRUE,
+                          legend = "right")
+
+ggsave(paste0(getwd(), "/scatter_plot_tissue.png"), 
+       scatter_plot_tissue,
+       dpi = 480)
+
+# Tissue without non-detects ----------------------------------------------
+metal_PBDE_clean_scatter <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+                                                         y = Total_PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE")
+
+metal_PFAS_clean_scatter <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+                                               y = Total_PFAS)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PFAS")
+
+scatter_plot_tissue_clean <- ggarrange(metal_PBDE_clean_scatter, metal_PFAS_clean_scatter, 
+                                 ncol=2, 
+                                 common.legend = TRUE,
+                                 legend = "right")
+
+ggsave(paste0(getwd(), "/scatter_plot_tissue_clean.png"), 
+       scatter_plot_tissue_clean,
+       dpi = 480)
+  
+# Species with non-detects-----------------------------------------------------------------
+metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals, 
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE")
+
+OPE_PBDE <- ggplot(sum_4_conta_data, aes(x = Total_OPE,
+                                         y = Total_PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "OPE vs. PBDE")
+
+metal_OPE <- ggplot(sum_4_conta_data, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. OPE")
+
+
+scatter_plot_species <- ggarrange(metal_PBDE, OPE_PBDE, metal_OPE, 
+                                 ncol=3, 
+                                 common.legend = TRUE,
+                                 legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_species.png"), 
+       scatter_plot_species,
+       dpi = 480)
+
+
+# Species without non-detects ---------------------------------------------
+metal_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE")
+
+OPE_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = Total_OPE,
+                                         y = Total_PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "OPE vs. PBDE")
+
+metal_OPE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. OPE")
+
+
+scatter_plot_species_clean <- ggarrange(metal_PBDE_clean, OPE_PBDE_clean, metal_OPE_clean, 
+                                  ncol=3, 
+                                  common.legend = TRUE,
+                                  legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_species_clean.png"), 
+       scatter_plot_species_clean,
+       dpi = 480)
+
+# Location with non-detects---------------------------------------------------------------------
+metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals,
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. PBDE")
+
+metal_OPE <- ggplot(sum_4_conta_data, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. OPE")
+
+metal_PFAS <- ggplot(sum_4_conta_data, aes(x = metals,
+                                           y = Total_PFAS)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. PFAS")
+
+scatter_plot_location <- ggarrange(metal_PBDE, metal_OPE, metal_PFAS, 
+                              ncol=3, 
+                              common.legend = TRUE,
+                              legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_location.png"), 
+       scatter_plot_location,
+       dpi = 480)
+
+
+# Location without non-detects --------------------------------------------
+metal_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. PBDE")
+
+metal_OPE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. OPE")
+
+metal_PFAS_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PFAS)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "metals vs. PFAS")
+
+scatter_plot_location_clean <- ggarrange(metal_PBDE_clean, metal_OPE_clean, metal_PFAS_clean, 
+                                   ncol=3, 
+                                   common.legend = TRUE,
+                                   legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_location_clean.png"), 
+       scatter_plot_location_clean,
+       dpi = 480)
+
+# Sex with non-detects----------------------------------------------------------------
+metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals,
+                                          y = Total_PBDE)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. PBDE")
+
+metal_OPE <- ggplot(sum_4_conta_data, aes(x = metals,
+                                         y = Total_OPE)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. OPE")
+
+metal_PFAS <- ggplot(sum_4_conta_data, aes(x = metals,
+                                         y = Total_PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. PFAS")
+
+scatter_plot_sex <- ggarrange(metal_PBDE, metal_OPE, metal_PFAS, 
+                                   ncol=3, 
+                                   common.legend = TRUE,
+                                   legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_sex.png"), 
+       scatter_plot_sex,
+       dpi = 480)
+
+# Sex without non-detects -------------------------------------------------
+metal_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PBDE)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. PBDE")
+
+metal_OPE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                          y = Total_OPE)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. OPE")
+
+metal_PFAS_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals,
+                                           y = Total_PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "metals vs. PFAS")
+
+scatter_plot_sex_clean <- ggarrange(metal_PBDE_clean, metal_OPE_clean, metal_PFAS_clean, 
+                              ncol=3, 
+                              common.legend = TRUE,
+                              legend = "bottom")
+
+ggsave(paste0(getwd(), "/scatter_plot_sex_clean.png"), 
+       scatter_plot_sex_clean,
+       dpi = 480)
+
+
+# Bar plot frequency of non-detects  --------------------------------------
+PBDE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PBDE))/130
+metals_nondetect <- sum(is.na(sum_4_conta_data_copy$metals))/130
+PFAS_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_PFAS))/130
+OPE_nondetect <- sum(is.na(sum_4_conta_data_copy$Total_OPE))/130
+nondetect_df <- data.frame(Contaminant = c("metals", "PBDE", "PFAS", "OPE"),
+                           Nondetects_quantity = c(metals_nondetect,
+                                                   PBDE_nondetect,
+                                                   PFAS_nondetect,
+                                                   OPE_nondetect))
+
+# Summarize percentage of non-detects by Tissue/Species/Sex/Location ----------------------
+sum_4_conta_data_copy %>%
+  group_by(Collection.Location) %>%
+  summarise(count_non_detects = sum(is.na(Total_OPE))/130*100)
+  
+
+
+# non_detect_barplot <- ggplot(data = nondetect_df,
+#                              aes(x = Contaminant,
+#                                  y = Nondetects_quantity)) + 
+#   geom_bar(aes(fill = Contaminant),
+#            stat = "identity")
+# 
+# ggsave(paste0(getwd(), "/non_detect_barplot.png"), 
+#        non_detect_barplot,
+#        dpi = 480)
+
+# Mann-Whitney test -------------------------------------------------------
+
+wilcox_test_tissue <- function(nrow, ncol, ) {
+  # body
+  # output
+}
+
+# Tissue ~ Metals -------------------------------------------------------
+tissue_metals_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
+colnames(tissue_metals_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+rownames(tissue_metals_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+
+
+for (i in rownames(tissue_metals_matrix)) {
+  for (j in colnames(tissue_metals_matrix)) {
+    subset_df_metals_1 <- filter(long_df_metals, Tissue == i)
+    subset_df_metals_2 <- filter(long_df_metals, Tissue == j)
+    tissue_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                             y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Tissue ~ PBDE -----------------------------------------------------------
+tissue_PBDE_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
+colnames(tissue_PBDE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+rownames(tissue_PBDE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+
+
+for (i in rownames(tissue_PBDE_matrix)) {
+  for (j in colnames(tissue_PBDE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PBDE, Tissue == i)
+    subset_df_metals_2 <- filter(long_df_PBDE, Tissue == j)
+    tissue_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                             y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Tissue ~ PFAS -----------------------------------------------------------
+tissue_PFAS_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
+colnames(tissue_PFAS_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+rownames(tissue_PFAS_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+
+
+for (i in rownames(tissue_PFAS_matrix)) {
+  for (j in colnames(tissue_PFAS_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PFAS, Tissue == i)
+    subset_df_metals_2 <- filter(long_df_PFAS, Tissue == j)
+    tissue_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                             y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Tissue ~ OPE ------------------------------------------------------------
+tissue_OPE_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
+colnames(tissue_OPE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+rownames(tissue_OPE_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
+
+
+for (i in rownames(tissue_OPE_matrix)) {
+  for (j in colnames(tissue_OPE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_OPE, Tissue == i)
+    subset_df_metals_2 <- filter(long_df_OPE, Tissue == j)
+    tissue_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                             y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Species ~ Metals --------------------------------------------------------
+species_metals_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_metals_matrix) <- c("BLKI", "NOFU")
+rownames(species_metals_matrix) <- c("BLKI", "NOFU")
+
+for (i in rownames(species_metals_matrix)) {
+  for (j in colnames(species_metals_matrix)) {
+    subset_df_metals_1 <- filter(long_df_metals, species == i)
+    subset_df_metals_2 <- filter(long_df_metals, species == j)
+    species_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                             y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Species ~ PBDE ----------------------------------------------------------
+species_PBDE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_PBDE_matrix) <- c("BLKI", "NOFU")
+rownames(species_PBDE_matrix) <- c("BLKI", "NOFU")
+
+for (i in rownames(species_PBDE_matrix)) {
+  for (j in colnames(species_PBDE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PBDE, species == i)
+    subset_df_metals_2 <- filter(long_df_PBDE, species == j)
+    species_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                              y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Species ~ PFAS ----------------------------------------------------------
+species_PFAS_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_PFAS_matrix) <- c("BLKI", "NOFU")
+rownames(species_PFAS_matrix) <- c("BLKI", "NOFU")
+
+for (i in rownames(species_PFAS_matrix)) {
+  for (j in colnames(species_PFAS_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PFAS, species == i)
+    subset_df_metals_2 <- filter(long_df_PFAS, species == j)
+    species_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                              y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Species ~ OPE -----------------------------------------------------------
+species_OPE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(species_OPE_matrix) <- c("BLKI", "NOFU")
+rownames(species_OPE_matrix) <- c("BLKI", "NOFU")
+
+for (i in rownames(species_OPE_matrix)) {
+  for (j in colnames(species_OPE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_OPE, species == i)
+    subset_df_metals_2 <- filter(long_df_OPE, species == j)
+    species_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                              y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Sex ~ Metals ------------------------------------------------------------
+sex_metals_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_metals_matrix) <- c("Male", "Female")
+rownames(sex_metals_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_metals_matrix)) {
+  for (j in colnames(sex_metals_matrix)) {
+    subset_df_metals_1 <- filter(long_df_metals, Sex == i)
+    subset_df_metals_2 <- filter(long_df_metals, Sex == j)
+    sex_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                           y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Sex ~ PBDE --------------------------------------------------------------
+sex_PBDE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_PBDE_matrix) <- c("Male", "Female")
+rownames(sex_PBDE_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_PBDE_matrix)) {
+  for (j in colnames(sex_PBDE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PBDE, Sex == i)
+    subset_df_metals_2 <- filter(long_df_PBDE, Sex == j)
+    sex_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                          y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Sex ~ PFAS --------------------------------------------------------------
+sex_PFAS_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_PFAS_matrix) <- c("Male", "Female")
+rownames(sex_PFAS_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_PFAS_matrix)) {
+  for (j in colnames(sex_PFAS_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PFAS, Sex == i)
+    subset_df_metals_2 <- filter(long_df_PFAS, Sex == j)
+    sex_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                          y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Sex ~ OPE ---------------------------------------------------------------
+sex_OPE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(sex_OPE_matrix) <- c("Male", "Female")
+rownames(sex_OPE_matrix) <- c("Male", "Female")
+
+for (i in rownames(sex_OPE_matrix)) {
+  for (j in colnames(sex_OPE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_OPE, Sex == i)
+    subset_df_metals_2 <- filter(long_df_OPE, Sex == j)
+    sex_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                          y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Location ~ Metals -------------------------------------------------------
+location_metals_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_metals_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_metals_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_metals_matrix)) {
+  for (j in colnames(location_metals_matrix)) {
+    subset_df_metals_1 <- filter(long_df_metals, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_metals, Collection.Location == j)
+    location_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                       y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+# Location ~ PBDE ---------------------------------------------------------
+location_PBDE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_PBDE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_PBDE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_PBDE_matrix)) {
+  for (j in colnames(location_PBDE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PBDE, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_PBDE, Collection.Location == j)
+    location_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                               y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Location ~ PFAS ---------------------------------------------------------
+location_PFAS_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_PFAS_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_PFAS_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_PFAS_matrix)) {
+  for (j in colnames(location_PFAS_matrix)) {
+    subset_df_metals_1 <- filter(long_df_PFAS, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_PFAS, Collection.Location == j)
+    location_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                               y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+# Location ~ OPE ----------------------------------------------------------
+location_OPE_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+colnames(location_OPE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+rownames(location_OPE_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
+
+for (i in rownames(location_OPE_matrix)) {
+  for (j in colnames(location_OPE_matrix)) {
+    subset_df_metals_1 <- filter(long_df_OPE, Collection.Location == i)
+    subset_df_metals_2 <- filter(long_df_OPE, Collection.Location == j)
+    location_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
+                                               y = subset_df_metals_2$Concentration)$p.value
+  }
+}
+
+
+
