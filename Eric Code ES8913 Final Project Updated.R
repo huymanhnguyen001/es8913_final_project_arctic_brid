@@ -15,7 +15,7 @@ library(tidyr)
 # Data Manipulations ------------------------------------------------------
 
 #data<-fread(paste0(getwd(),"/contaminant_database.csv"))
-data <- fread("C:/Users/ericf/Desktop/Ryerson Masters/ES8913/contaminant_database.csv")
+data <- read.csv(paste0(getwd(), "./contaminant_database.csv"))
 
 ##data manipulations
 data<-data %>% rowwise() %>%
@@ -130,33 +130,34 @@ data<- data %>% rowwise() %>%
 
 #Total metals
 data<- data %>% rowwise() %>%
-  mutate(Metals =   sum(Lead, Chromium, Arsenic, Cadmium, Copper, Manganese, Rubidium, Aluminum, Mercury, Molybdenum, Nickel, Lithium, Strontium, Boron, Cobalt, Bismuth, Silver, na.rm = TRUE))
+  mutate(Metals = sum(Lead, Chromium, Arsenic, Cadmium, Copper, Manganese, Rubidium, Aluminum, Mercury, Molybdenum, Nickel, Lithium, Strontium, Boron, Cobalt, Bismuth, Silver, na.rm = TRUE))
 
 #Total PFAS [ng/g]
-data<- data %>% rowwise() %>%
+data <- data %>% 
+  rowwise() %>%
   mutate(PFAS =
-           sum(FBSA_Rob,
-               FOSA_Rob,
-               N_MeFOSA_Rob,
-               N_EtFOSA_Rob,
-               PFEtCHxS_Rob,
-               PFBS_Rob,
-               PFHxS_Rob,
-               PFOS_Rob,
-               PFDS_Rob,
-               PFBA_Rob,
-               PFPeA_Rob,
-               PFHxA_Rob,
-               PFHpA_Rob,
-               PFOA_Rob,
-               PFNA_Rob,
-               PFDA_Rob,
-               PFUdA_Rob,
-               PFDoA_Rob,
-               PFTrDA_Rob,
-               PFTeDA_Rob,
-               PFHxDA_Rob,
-               PFODA_Rob, na.rm = TRUE))
+           sum(FBSA._Rob,
+               FOSA._Rob,
+               N_MeFOSA._Rob,
+               N_EtFOSA._Rob,
+               PFEtCHxS._Rob,
+               PFBS._Rob,
+               PFHxS._Rob,
+               PFOS._Rob,
+               PFDS._Rob,
+               PFBA._Rob,
+               PFPeA._Rob,
+               PFHxA._Rob,
+               PFHpA._Rob,
+               PFOA._Rob,
+               PFNA._Rob,
+               PFDA._Rob,
+               PFUdA._Rob,
+               PFDoA._Rob,
+               PFTrDA._Rob,
+               PFTeDA._Rob,
+               PFHxDA._Rob,
+               PFODA._Rob, na.rm = TRUE))
 
 #Total OPEs [ng/g]
 data<- data %>%  rowwise() %>%
@@ -179,8 +180,10 @@ data<- data %>%  rowwise() %>%
                EHDPP,
                TMPP, na.rm = TRUE))
 
-#Total OCPs [ng/g]
-data<- data %>%   rowwise() %>%
+
+#Total OCPs [ng/g] 
+data <- data %>%   
+  rowwise() %>%
   mutate(Total_OCP =
            sum(cis_Chlordane,
                trans_Chlordane,
@@ -199,8 +202,9 @@ data<- data %>%   rowwise() %>%
                Oxychlordane,
                Pentachlorobenzene,
                Photomirex,
-               x1.2.3.4_Tetrachlorobenzene,
-               x1.2.4.5_Tetrachlorobenzene_1.2.3.5_Tetrachlorobenzene, na.rm = TRUE))
+               X1.2.3.4_Tetrachlorobenzene,
+               X1.2.4.5_Tetrachlorobenzene_1.2.3.5_Tetrachlorobenzene, na.rm = TRUE))
+
 
 
 # making a new df with only the summarized conaminants
