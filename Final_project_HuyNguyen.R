@@ -290,6 +290,13 @@ long_df <- pivot_longer(sum_4_conta_data_LOD,
                         names_to = "Contaminant",
                         values_to = "Concentration")
 
+# With non-detects, aka. LOD data
+long_df_metals <- filter(long_df, Contaminant == "metals")
+long_df_PBDE <- filter(long_df, Contaminant == "Total_PBDE")
+long_df_PFAS <- filter(long_df, Contaminant == "Total_PFAS")
+long_df_OPE <- filter(long_df, Contaminant == "Total_OPE")
+
+# Without non-detects data
 long_df_metals_clean<- pivot_longer(sum_4_conta_data_metals_clean,
                                     cols = c("metals", "Total_PBDE", 
                                              "Total_PFAS", "Total_OPE"),
@@ -314,10 +321,6 @@ long_df_OPE_clean <- pivot_longer(sum_4_conta_data_OPE_clean,
                                   names_to = "Contaminant",
                                   values_to = "Concentration")
 
-# long_df_metals <- filter(long_df, Contaminant == "metals")
-# long_df_PBDE <- filter(long_df, Contaminant == "Total_PBDE")
-# long_df_PFAS <- filter(long_df, Contaminant == "Total_PFAS")
-# long_df_OPE <- filter(long_df, Contaminant == "Total_OPE")
 
 long_scale_df <- pivot_longer(sum_4_conta_scale_data,
                         cols = c("metals", "Total_PBDE", 
@@ -1082,10 +1085,10 @@ sum_4_conta_data_copy %>%
 
 # Mann-Whitney test -------------------------------------------------------
 
-wilcox_test_tissue <- function(nrow, ncol, ) {
-  # body
-  # output
-}
+# wilcox_test_tissue <- function(nrow, ncol, ) {
+#   # body
+#   # output
+# }
 
 # Tissue ~ Metals -------------------------------------------------------
 tissue_metals_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
