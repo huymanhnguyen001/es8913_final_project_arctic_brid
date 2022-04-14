@@ -977,7 +977,7 @@ metal_PBDE <- ggplot(sum_4_conta_data_LOD, aes(x = metals,
   geom_point(aes(color = Tissue)) +
   labs(title = "metal vs. PBDE with non-detects")
 
-metal_PBDE_clean_scatter <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+metal_PBDE_clean_scatter_tissue <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
                                                               y = Total_PBDE)) +
   geom_point(aes(color = Tissue)) +
   labs(title = "metal vs. PBDE without non-detects")
@@ -987,8 +987,8 @@ scatter_plot_tissue <- ggarrange(metal_PBDE, metal_PBDE_clean_scatter,
                           common.legend = TRUE,
                           legend = "right")
 
-ggsave(paste0(getwd(), "/scatter_plot_tissue.png"), 
-       scatter_plot_tissue,
+ggsave(paste0(getwd(), "/metal_PBDE_clean_scatter_tissue.png"), 
+       metal_PBDE_clean_scatter_tissue,
        dpi = 480)
 
 
@@ -998,7 +998,7 @@ metal_PBDE <- ggplot(sum_4_conta_data, aes(x = metals,
   geom_point(aes(color = species)) +
   labs(title = "metal vs. PBDE with non-detects")
 
-metal_PBDE_clean <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
+metal_PBDE_clean_scatter_species <- ggplot(sum_4_conta_data_copy, aes(x = metals, 
                                                       y = Total_PBDE)) +
   geom_point(aes(color = species)) +
   labs(title = "metal vs. PBDE without non-detects")
@@ -1008,8 +1008,8 @@ scatter_plot_species <- ggarrange(metal_PBDE, metal_PBDE_clean,
                                  common.legend = TRUE,
                                  legend = "right")
 
-ggsave(paste0(getwd(), "/scatter_plot_species.png"), 
-       scatter_plot_species,
+ggsave(paste0(getwd(), "/metal_PBDE_clean_scatter_species.png"), 
+       metal_PBDE_clean_scatter_species,
        dpi = 480)
 
 # Location with vs. without non-detects---------------------------------------------------------------------
@@ -1037,12 +1037,12 @@ ggsave(paste0(getwd(), "/scatter_plot_location.png"),
 PBDE_PFAS <- ggplot(sum_4_conta_data, aes(x = Total_PBDE,
                                           y = Total_PFAS)) +
   geom_point(aes(color = Sex)) +
-  labs(title = "PBDE vs. PBDE with non-detects")
+  labs(title = "PBDE vs. PFAS with non-detects")
 
 PBDE_PFAS_clean <- ggplot(sum_4_conta_data_copy, aes(x = Total_PBDE,
                                           y = Total_PFAS)) +
   geom_point(aes(color = Sex)) +
-  labs(title = "PBDE vs. PBDE without non-detects")
+  labs(title = "PBDE vs. PFAS without non-detects")
 
 
 
@@ -1158,10 +1158,10 @@ rownames(species_metals_matrix) <- c("BLKI", "NOFU")
 
 for (i in rownames(species_metals_matrix)) {
   for (j in colnames(species_metals_matrix)) {
-    subset_df_metals_1 <- filter(long_df_metals, species == i)
-    subset_df_metals_2 <- filter(long_df_metals, species == j)
-    species_metals_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
-                                             y = subset_df_metals_2$Concentration)$p.value
+    subset_df_1 <- filter(long_df_metals, species == i)
+    subset_df_2 <- filter(long_df_metals, species == j)
+    species_metals_matrix[i,j] <- wilcox.test(x = subset_df_1$Concentration,
+                                             y = subset_df_2$Concentration)$p.value
   }
 }
 
@@ -1172,10 +1172,10 @@ rownames(species_PBDE_matrix) <- c("BLKI", "NOFU")
 
 for (i in rownames(species_PBDE_matrix)) {
   for (j in colnames(species_PBDE_matrix)) {
-    subset_df_metals_1 <- filter(long_df_PBDE, species == i)
-    subset_df_metals_2 <- filter(long_df_PBDE, species == j)
-    species_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
-                                              y = subset_df_metals_2$Concentration)$p.value
+    subset_df_1 <- filter(long_df_PBDE, species == i)
+    subset_df_2 <- filter(long_df_PBDE, species == j)
+    species_PBDE_matrix[i,j] <- wilcox.test(x = subset_df_1$Concentration,
+                                              y = subset_df_2$Concentration)$p.value
   }
 }
 
@@ -1186,10 +1186,10 @@ rownames(species_PFAS_matrix) <- c("BLKI", "NOFU")
 
 for (i in rownames(species_PFAS_matrix)) {
   for (j in colnames(species_PFAS_matrix)) {
-    subset_df_metals_1 <- filter(long_df_PFAS, species == i)
-    subset_df_metals_2 <- filter(long_df_PFAS, species == j)
-    species_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
-                                              y = subset_df_metals_2$Concentration)$p.value
+    subset_df_1 <- filter(long_df_PFAS, species == i)
+    subset_df_2 <- filter(long_df_PFAS, species == j)
+    species_PFAS_matrix[i,j] <- wilcox.test(x = subset_df_1$Concentration,
+                                              y = subset_df_2$Concentration)$p.value
   }
 }
 
@@ -1200,10 +1200,10 @@ rownames(species_OPE_matrix) <- c("BLKI", "NOFU")
 
 for (i in rownames(species_OPE_matrix)) {
   for (j in colnames(species_OPE_matrix)) {
-    subset_df_metals_1 <- filter(long_df_OPE, species == i)
-    subset_df_metals_2 <- filter(long_df_OPE, species == j)
-    species_OPE_matrix[i,j] <- wilcox.test(x = subset_df_metals_1$Concentration,
-                                              y = subset_df_metals_2$Concentration)$p.value
+    subset_df_1 <- filter(long_df_OPE, species == i)
+    subset_df_2 <- filter(long_df_OPE, species == j)
+    species_OPE_matrix[i,j] <- wilcox.test(x = subset_df_1$Concentration,
+                                              y = subset_df_2$Concentration)$p.value
   }
 }
 
