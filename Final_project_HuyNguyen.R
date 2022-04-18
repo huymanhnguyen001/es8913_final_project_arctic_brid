@@ -13,6 +13,7 @@ library(rmarkdown)
 library(knitr)
 library(FactoMineR)
 library(factoextra)
+source(paste0(getwd(), "./utils.R"))
 
 # Data Import and Manipulation -------------------------------------------------------
 
@@ -243,30 +244,18 @@ data <- data %>%
 
 # Extracting 4 best groups of contaminant: metals, PBDE, PFAS, OPE --------
 
-sum_4_conta_data <- select(data, Tissue, species, Sex, Collection.Location, 
+subset_data <- select(data, Tissue, species, Sex, Collection.Location, 
                            Total_PBDE, metals, Total_PFAS, Total_OPE)
 
-#Replace zero with NA values
-sum_4_conta_data_copy <- copy(sum_4_conta_data)
-sum_4_conta_data_copy$Total_PBDE[sum_4_conta_data_copy$Total_PBDE == 0] <- NA
-sum_4_conta_data_copy$metals[sum_4_conta_data_copy$metals == 0] <- NA
-sum_4_conta_data_copy$Total_PFAS[sum_4_conta_data_copy$Total_PFAS == 0] <- NA
-sum_4_conta_data_copy$Total_OPE[sum_4_conta_data_copy$Total_OPE == 0] <- NA
+# Replace zero with NA values for plotting scatter plot
+subset_data_NA <- zero_it_out(subset_data, 
+                                col = c("Total_PBDE", "metals", "Total_PFAS", "Total_OPE"),
+                                options = "by_NA")
 
 # Option 1. Replace zero values with a value that is 0.5*LOD  -------------
-sum_4_conta_data_LOD <- copy(sum_4_conta_data)
-sum_4_conta_data_LOD$Total_PBDE[sum_4_conta_data$Total_PBDE == 0] <- runif(sum(sum_4_conta_data$Total_PBDE == 0),
-                                             min = 0.0145000,
-                                             max=0.0155000)
-sum_4_conta_data_LOD$metals[sum_4_conta_data$metals == 0] <- runif(sum(sum_4_conta_data$metals == 0),
-                                                 min = 0.0145000,
-                                                 max=0.0155000)
-sum_4_conta_data_LOD$Total_PFAS[sum_4_conta_data$Total_PFAS == 0] <- runif(sum(sum_4_conta_data$Total_PFAS == 0),
-                                             min = 0.0145000,
-                                             max=0.0155000)
-sum_4_conta_data_LOD$Total_OPE[sum_4_conta_data$Total_OPE == 0] <- runif(sum(sum_4_conta_data$Total_OPE == 0),
-                                           min = 0.0145000,
-                                           max=0.0155000)
+subset_data_LOD <- zero_it_out(subset_data, 
+                               col = c("Total_PBDE", "metals", "Total_PFAS", "Total_OPE"),
+                               options = "LOD")
 
 # Option 2. REMOVING all zero values --------------------------------------
 sum_4_conta_data_metals_clean <- sum_4_conta_data %>%
