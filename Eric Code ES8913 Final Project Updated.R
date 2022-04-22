@@ -3,22 +3,35 @@
 # Packages ----------------------------------------------------------------
 
 
+set.seed(12345)
+
 library(readr)
 library(data.table)
 library(dplyr)
 library(FactoMineR)
 library(factoextra)
 library(tidyr)
-#library(Rmisc)
-#library(dgof)
 
-# Data Manipulations ------------------------------------------------------
 
-#data<-fread(paste0(getwd(),"/contaminant_database.csv"))
+# Data Import and Manipulation -------------------------------------------------------
+
 data <- read.csv(paste0(getwd(), "./contaminant_database.csv"))
 
-##data manipulations
-data<-data %>% rowwise() %>%
+# Change name of Sex variable
+
+for (i in 1:dim(data)[1]) {
+  if (data$Sex[i] == "F") {
+    data$Sex[i] <- "Female"
+  }
+  else {
+    data$Sex[i] <- "Male"
+  }
+}
+
+# Adding contaminants into summary columns -----------------------------------
+
+#total Ph
+data <- data %>% rowwise() %>%
   mutate(Total_Ph =
            sum(DMP,
                DEP,
@@ -27,8 +40,8 @@ data<-data %>% rowwise() %>%
                DEHP,
                DNOP, na.rm = TRUE))
 
-#total PBDE in ng/g
-data<-data %>% rowwise() %>%
+#total PBDE in ng/g ***
+data <- data %>% rowwise() %>%
   mutate(PBDE =
            sum(BDE17_Kim,
                BDE28_Kim,
@@ -70,13 +83,15 @@ data<-data %>% rowwise() %>%
                BDE99_Rob, na.rm = TRUE))
 
 #total HBCDD in ng/g
-data<-data %>% rowwise() %>%
+data <- data %>% 
+  rowwise() %>%
   mutate(Total_HBCDD =
            sum(HBCD_Kim,
                alpha_HBCDD_Rob, na.rm = TRUE))
 
 #total DP in ng/g
-data<-data %>% rowwise() %>%
+data <- data %>% 
+  rowwise() %>%
   mutate(Total_DP =
            sum(syn_DP_Kim,
                anti_DP_Kim,
@@ -85,7 +100,8 @@ data<-data %>% rowwise() %>%
 
 
 #total NBFRs in ng/g
-data<-data %>% rowwise() %>%
+data <- data %>% 
+  rowwise() %>%
   mutate(Total_NBFR =
            sum(b_TBECH_BDE15_Kim,
                BTBPE_Kim,
@@ -110,7 +126,8 @@ data<-data %>% rowwise() %>%
                TBX_Rob, na.rm = TRUE))
 
 #Total UV stabilizers [ng/g]
-data<- data %>% rowwise() %>%
+data <- data %>% 
+  rowwise() %>%
   mutate(Total_UV =
            sum(C4,
                C4C4,
@@ -128,11 +145,28 @@ data<- data %>% rowwise() %>%
                UV350,
                C8_mono_DPA.peak_1, na.rm = TRUE))
 
-#Total metals
-data<- data %>% rowwise() %>%
-  mutate(Metals = sum(Lead, Chromium, Arsenic, Cadmium, Copper, Manganese, Rubidium, Aluminum, Mercury, Molybdenum, Nickel, Lithium, Strontium, Boron, Cobalt, Bismuth, Silver, na.rm = TRUE))
+#Total metals ***
+data <- data %>% 
+  rowwise() %>%
+  mutate(Metals = sum(Lead, 
+                        Chromium, 
+                        Arsenic,
+                        Cadmium, 
+                        Copper, 
+                        Manganese, 
+                        Rubidium, 
+                        Aluminum, 
+                        Mercury, 
+                        Molybdenum, 
+                        Nickel, 
+                        Lithium, 
+                        Strontium, 
+                        Boron, 
+                        Cobalt,
+                        Bismuth, 
+                        Silver, na.rm = TRUE))
 
-#Total PFAS [ng/g]
+#Total PFAS [ng/g] ***
 data <- data %>% 
   rowwise() %>%
   mutate(PFAS =
@@ -159,8 +193,9 @@ data <- data %>%
                PFHxDA._Rob,
                PFODA._Rob, na.rm = TRUE))
 
-#Total OPEs [ng/g]
-data<- data %>%  rowwise() %>%
+#Total OPEs [ng/g] ***
+data <- data %>%  
+  rowwise() %>%
   mutate(OPE =
            sum(TEP,
                TPrP,
@@ -179,7 +214,6 @@ data<- data %>%  rowwise() %>%
                TPHP,
                EHDPP,
                TMPP, na.rm = TRUE))
-
 
 #Total OCPs [ng/g] 
 data <- data %>%   
@@ -206,71 +240,68 @@ data <- data %>%
                X1.2.4.5_Tetrachlorobenzene_1.2.3.5_Tetrachlorobenzene, na.rm = TRUE))
 
 
-
-# making a new df with only the summarized conaminants
-
-sum_data <- select(data, 1:8, 870:879)
-
-# use this df
-
-sum_data2 <- sum_data[c(1:8,10,15:17)]
+# Extracting 4 best groups of contaminant: metals, PBDE, PFAS, OPE --------
 
 
-sum_data2$Tissue <- as.factor(sum_data2$Tissue)
-sum_data2$species <- as.factor(sum_data2$species)
-sum_data2$Sex <- as.factor(sum_data2$Sex)
-sum_data2$Collection.Location <- as.factor(sum_data2$Collection.Location)
+subset_data <- select(data, Tissue, species, Sex, Collection.Location, 
+                      PBDE, Metals, PFAS, OPE)
 
 
-# scaling the data
-  # may not be necessary, have to check the manuscript and see what units everything is in
-
-scale_data <- sum_data
-scale_data[9:18] <- scale(scale_data[9:18])
-
-# taking the scaled data for only metals, PBDE, OPEs, and PFAS
-  # may not be necessary, have to check the manuscript and see what units everything is in
-
-scale_data2 <- scale_data[c(1:8,10,15:17)]
+# Making each grouping variable (tissue, species, sex, location) a factor
 
 
+subset_data$Tissue <- as.factor(subset_data$Tissue)
+subset_data$species <- as.factor(subset_data$species)
+subset_data$Sex <- as.factor(subset_data$Sex)
+subset_data$Collection.Location <- as.factor(subset_data$Collection.Location)
 
-# replacing non-detects (0's) with randomly generated value that is 
-# approximately 0.5*LOD
 
-set.seed(12345)
+# Non-detect (zero) value replacement -------------------------------------
 
-sum_data2$PBDE[sum_data2$PBDE == 0] <- runif(sum(sum_data2$PBDE == 0),
-                                             min = 0.0145000,
-                                             max=0.0155000)
 
-sum_data2$Metals[sum_data2$Metals == 0] <- runif(sum(sum_data2$Metals == 0),
-                                             min = 0.0145000,
-                                             max=0.0155000)
+# All zero values were replaced with a random value around the half-LOD (0.015)
 
-sum_data2$PFAS[sum_data2$PFAS == 0] <- runif(sum(sum_data2$PFAS == 0),
-                                             min = 0.0145000,
-                                             max=0.0155000)
 
-sum_data2$OPE[sum_data2$OPE == 0] <- runif(sum(sum_data2$OPE == 0),
+# replacing zeros in the Metals group
+
+subset_data$Metals[subset_data$Metals == 0]<-runif(sum(subset_data$Metals == 0),
+                                                   min = 0.0145000,
+                                                   max=0.0155000)
+
+
+# replacing zeros in the OPEs group
+
+subset_data$OPE[subset_data$OPE == 0]<-runif(sum(subset_data$OPE == 0),
                                              min = 0.0145000,
                                              max=0.0155000)
 
 
+# replacing zeros in the PBDEs group
+
+subset_data$PBDE[subset_data$PBDE == 0]<-runif(sum(subset_data$PBDE == 0),
+                                               min = 0.0145000,
+                                               max=0.0155000)
 
 
-# Pivoting long and facet boxplots ---------------------------------------
+# replacing zeros in the PFAS group
+
+subset_data$PFAS[subset_data$PFAS == 0]<-runif(sum(subset_data$PFAS == 0),
+                                               min = 0.0145000,
+                                               max=0.0155000)
 
 
-# pivoting the un-scaled data long
-
-long_df <- pivot_longer(sum_data2,
-                       cols = c("Metals", "PBDE", "PFAS", "OPE"),
-                       names_to = "Contaminant",
-                       values_to = "Concentration")
+# Pivoting the Data Long -------------------------------------------------
 
 
-# subsetting by contaminant class
+# pivoting the data long by contaminant type
+
+long_df <- pivot_longer(subset_data,
+                        cols = c("Metals", "PBDE", "PFAS", "OPE"),
+                        names_to = "Contaminant",
+                        values_to = "Concentration")
+
+
+# sub-setting by contaminant class
 
 long_df_metals <- filter(long_df, Contaminant == "Metals")
 
@@ -281,558 +312,589 @@ long_df_PBDE <- filter(long_df, Contaminant == "PBDE")
 long_df_PFAS <- filter(long_df, Contaminant == "PFAS")
 
 
-
-
-
-# pivoting the long_df to a wide one for statistical analysis
-  # pivotting by tissue
-
-tissue_df <- pivot_wider(long_df,
-                             id_cols = c("Bird_ID",
-                                         "Element",
-                                         "USOX",
-                                         "species",
-                                         "Sex",
-                                         "Collection.Date",
-                                         "Collection.Location",
-                                         "Contaminant"),
-                             names_from = "Tissue",
-                             values_from = "Concentration")
-
-
-tissue_metals <- subset(tissue_df, Contaminant == "Metals")
-tissue_PBDE <- subset(tissue_df, Contaminant == "PBDE")
-tissue_PFAS <- subset(tissue_df, Contaminant == "PFAS")
-tissue_OPE <- subset(tissue_df, Contaminant == "OPE")
-
-# pivotting by location
-
-location_df <- pivot_wider(long_df,
-                         id_cols = c("Bird_ID",
-                                     "Element",
-                                     "USOX",
-                                     "species",
-                                     "Sex",
-                                     "Collection.Date",
-                                     "Tissue",
-                                     "Contaminant"),
-                         names_from = "Collection.Location",
-                         values_from = "Concentration")
-
-
-location_metals <- subset(location_df, Contaminant == "Metals")
-location_PBDE <- subset(location_df, Contaminant == "PBDE")
-location_PFAS <- subset(location_df, Contaminant == "PFAS")
-location_OPE <- subset(location_df, Contaminant == "OPE")
-
-
-# pivotting by species
-
-species_df <- pivot_wider(long_df,
-                           id_cols = c("Bird_ID",
-                                       "Element",
-                                       "USOX",
-                                       "Collection.Location",
-                                       "Sex",
-                                       "Collection.Date",
-                                       "Tissue",
-                                       "Contaminant"),
-                           names_from = "species",
-                           values_from = "Concentration")
-
-
-species_metals <- subset(species_df, Contaminant == "Metals")
-species_PBDE <- subset(species_df, Contaminant == "PBDE")
-species_PFAS <- subset(species_df, Contaminant == "PFAS")
-species_OPE <- subset(species_df, Contaminant == "OPE")
-
-
-# pivotting by sex
-
-sex_df <- pivot_wider(long_df,
-                          id_cols = c("Bird_ID",
-                                      "Element",
-                                      "USOX",
-                                      "Collection.Location",
-                                      "species",
-                                      "Collection.Date",
-                                      "Tissue",
-                                      "Contaminant"),
-                          names_from = "Sex",
-                          values_from = "Concentration")
-
-
-sex_metals <- subset(sex_df, Contaminant == "Metals")
-sex_PBDE <- subset(sex_df, Contaminant == "PBDE")
-sex_PFAS <- subset(sex_df, Contaminant == "PFAS")
-sex_OPE <- subset(sex_df, Contaminant == "OPE")
-
-
-
-
-# facet boxplots template
-# feel free to update the theme/colourings, etc.
-
-ggplot(data = long_df, aes(x = Contaminant, y = Concentration)) + 
-  geom_boxplot(aes(fill = Contaminant)) +
-  facet_wrap( ~ Tissue, scales = "free") + 
-  ylab("Concentration") + 
-  xlab("Contaminant Type") +
-  theme_classic() + 
-  theme(strip.text.x = element_text(size = 10, color = "black"), 
-        strip.text.y = element_text(size = 15, color = "black")) +
-  theme(text = element_text(size=15), 
-        axis.text.x = element_blank(), 
-        axis.text.y = element_text(color = "black"), 
-        legend.position = "bottom")
-
-
-
-# Median, Min, Max --------------------------------------------------------
-
-basic_stats <- function(vect){
-  
-  values1 <- as.vector(vect)
-  values1 <- na.omit(values1)
-  
-  med <- median(values1)
-  maximum <- max(values1)
-  minimum <- min(values1)
-  sample_mean <- mean(values1)
-  
-  return(c(minimum, med, maximum, sample_mean))
-  
-}
-
-
-# basic stats for tissue variable
-
-basic_stats(tissue_metals$preen_oil)
-basic_stats(tissue_metals$liver)
-basic_stats(tissue_metals$egg)
-basic_stats(tissue_metals$muscle)
-basic_stats(tissue_metals$brain)
-basic_stats(tissue_metals$blood)
-basic_stats(tissue_metals$fat)
-
-basic_stats(tissue_OPE$preen_oil)
-basic_stats(tissue_OPE$liver)
-basic_stats(tissue_OPE$egg)
-basic_stats(tissue_OPE$muscle)
-basic_stats(tissue_OPE$brain)
-basic_stats(tissue_OPE$blood)
-basic_stats(tissue_OPE$fat)
-
-basic_stats(tissue_PBDE$preen_oil)
-basic_stats(tissue_PBDE$liver)
-basic_stats(tissue_PBDE$egg)
-basic_stats(tissue_PBDE$muscle)
-basic_stats(tissue_PBDE$brain)
-basic_stats(tissue_PBDE$blood)
-basic_stats(tissue_PBDE$fat)
-
-basic_stats(tissue_PFAS$preen_oil)
-basic_stats(tissue_PFAS$liver)
-basic_stats(tissue_PFAS$egg)
-basic_stats(tissue_PFAS$muscle)
-basic_stats(tissue_PFAS$brain)
-basic_stats(tissue_PFAS$blood)
-basic_stats(tissue_PFAS$fat)
-
-# basic stats for species variable
-
-basic_stats(species_metals$NOFU)
-basic_stats(species_metals$BLKI)
-basic_stats(species_OPE$NOFU)
-basic_stats(species_OPE$BLKI)
-basic_stats(species_PBDE$NOFU)
-basic_stats(species_PBDE$BLKI)
-basic_stats(species_PFAS$NOFU)
-basic_stats(species_PFAS$BLKI)
-
-
-# basic stats for location variable
-
-basic_stats(location_metals$`Labrador Sea`)
-basic_stats(location_metals$`Prince Leopold Island, NU`)
-basic_stats(location_OPE$`Labrador Sea`)
-basic_stats(location_OPE$`Prince Leopold Island, NU`)
-basic_stats(location_PBDE$`Labrador Sea`)
-basic_stats(location_PBDE$`Prince Leopold Island, NU`)
-basic_stats(location_PFAS$`Labrador Sea`)
-basic_stats(location_PFAS$`Prince Leopold Island, NU`)
-
-
-# basic stats for sex variable
-
-basic_stats(sex_metals$F)
-basic_stats(sex_metals$M)
-basic_stats(sex_OPE$F)
-basic_stats(sex_OPE$M)
-basic_stats(sex_PBDE$F)
-basic_stats(sex_PBDE$M)
-basic_stats(sex_PFAS$F)
-basic_stats(sex_PFAS$M)
-
-
-# ks-test tissue -------------------------------------------------------------
-
-# KS-test for tissues
-
-ks_tissue_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
-colnames(ks_tissue_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
-rownames(ks_tissue_matrix) <- c("blood", "brain", "egg", "fat", "liver", "muscle", "preen_oil")
-
-
-ks_tissue <- function(df){
-  
-  for (i in rownames(ks_tissue_matrix)) {
-    
-    for (j in colnames(ks_tissue_matrix)) {
-      
-      subset_df1 <- filter(df, Tissue == i)
-      subset_df2 <- filter(df, Tissue == j)
-      
-      ks_tissue_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
-                                       y = subset_df2$Concentration)$p.value
-    }
-  }
-  
-  return(ks_tissue_matrix)
-  
-}
-
-metals_ks_matrix <- ks_tissue(long_df_metals)
-write.csv(metals_ks_matrix, "metals_ks_matrix.csv")
-
-OPE_ks_matrix <- ks_tissue(long_df_OPE)
-write.csv(OPE_ks_matrix, "OPE_ks_matrix.csv")
-
-PBDE_ks_matrix <- ks_tissue(long_df_PBDE)
-write.csv(PBDE_ks_matrix, "PBDE_ks_matrix.csv")
-
-PFAS_ks_matrix <- ks_tissue(long_df_PFAS)
-write.csv(PFAS_ks_matrix, "PFAS_ks_matrix.csv")
-
-
-
-
-
-
-# ks-test location --------------------------------------------------------
-
-
-ks_location_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
-colnames(ks_location_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
-rownames(ks_location_matrix) <- c("Labrador Sea", "Prince Leopold Island, NU")
-
-
-ks_location <- function(df){
-  
-  for (i in rownames(ks_location_matrix)) {
-    
-    for (j in colnames(ks_location_matrix)) {
-      
-      subset_df1 <- filter(df, Collection.Location == i)
-      subset_df2 <- filter(df, Collection.Location == j)
-      
-      ks_location_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
-                                         y = subset_df2$Concentration)$p.value
-    }
-  }
-  
-  return(ks_location_matrix)
-  
-}
-
-
-metals_ks_location <- ks_location(long_df_metals)
-write.csv(metals_ks_location, "metals_ks_location.csv")
-
-OPE_ks_location <- ks_location(long_df_OPE)
-write.csv(OPE_ks_location, "OPE_ks_location.csv")
-
-PBDE_ks_location <- ks_location(long_df_PBDE)
-write.csv(PBDE_ks_location, "PBDE_ks_location.csv")
-
-PFAS_ks_location <- ks_location(long_df_PFAS)
-write.csv(PFAS_ks_location, "PFAS_ks_location.csv")
-
-
-# ks-test species ---------------------------------------------------------
-
-
-ks_species_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
-colnames(ks_species_matrix) <- c("BLKI", "NOFU")
-rownames(ks_species_matrix) <- c("BLKI", "NOFU")
-
-
-ks_species <- function(df){
-  
-  for (i in rownames(ks_species_matrix)) {
-    
-    for (j in colnames(ks_species_matrix)) {
-      
-      subset_df1 <- filter(df, species == i)
-      subset_df2 <- filter(df, species == j)
-      
-      ks_species_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
-                                        y = subset_df2$Concentration)$p.value
-    }
-  }
-  
-  return(ks_species_matrix)
-  
-}
-
-
-# saving each matrix as a CSV
-
-metals_ks_species <- ks_species(long_df_metals)
-write.csv(metals_ks_species, "metals_ks_species.csv")
-
-OPE_ks_species <- ks_species(long_df_OPE)
-write.csv(OPE_ks_species, "OPE_ks_species.csv")
-
-PBDE_ks_species <- ks_species(long_df_PBDE)
-write.csv(PBDE_ks_species, "PBDE_ks_species.csv")
-
-PFAS_ks_species <- ks_species(long_df_PFAS)
-write.csv(PFAS_ks_species, "PFAS_ks_species.csv")
-
-
-# ks-test sex -------------------------------------------------------------
-
-
-ks_sex_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
-colnames(ks_sex_matrix) <- c("F", "M")
-rownames(ks_sex_matrix) <- c("F", "M")
-
-
-ks_sex <- function(df){
-  
-  for (i in rownames(ks_sex_matrix)) {
-    
-    for (j in colnames(ks_sex_matrix)) {
-      
-      subset_df1 <- filter(df, Sex == i)
-      subset_df2 <- filter(df, Sex == j)
-      
-      ks_sex_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
-                                    y = subset_df2$Concentration)$p.value
-    }
-  }
-  
-  return(ks_sex_matrix)
-  
-}
-
-
-metals_ks_sex <- ks_sex(long_df_metals)
-write.csv(metals_ks_sex, "metals_ks_sex.csv")
-
-OPE_ks_sex <- ks_sex(long_df_OPE)
-write.csv(OPE_ks_sex, "OPE_ks_sex.csv")
-
-PBDE_ks_sex <- ks_sex(long_df_PBDE)
-write.csv(PBDE_ks_sex, "PBDE_ks_sex.csv")
-
-PFAS_ks_sex <- ks_sex(long_df_PFAS)
-write.csv(PFAS_ks_sex, "PFAS_ks_sex.csv")
-
-
-# CVs ---------------------------------------------------------------------
-
-# CVs for metals in tissue
-
-(sd(tissue_metals$blood, na.rm = TRUE)/mean(tissue_metals$blood, na.rm = TRUE))*100
-(sd(tissue_metals$brain, na.rm = TRUE)/mean(tissue_metals$brain, na.rm = TRUE))*100
-(sd(tissue_metals$egg, na.rm = TRUE)/mean(tissue_metals$egg, na.rm = TRUE))*100
-(sd(tissue_metals$fat, na.rm = TRUE)/mean(tissue_metals$fat, na.rm = TRUE))*100
-(sd(tissue_metals$liver, na.rm = TRUE)/mean(tissue_metals$liver, na.rm = TRUE))*100
-(sd(tissue_metals$muscle, na.rm = TRUE)/mean(tissue_metals$muscle, na.rm = TRUE))*100
-(sd(tissue_metals$preen_oil, na.rm = TRUE)/mean(tissue_metals$preen_oil, na.rm = TRUE))*100
-
-
-# CVs for OPEs in tissue
-
-(sd(tissue_OPE$blood, na.rm = TRUE)/mean(tissue_OPE$blood, na.rm = TRUE))*100
-(sd(tissue_OPE$brain, na.rm = TRUE)/mean(tissue_OPE$brain, na.rm = TRUE))*100
-(sd(tissue_OPE$egg, na.rm = TRUE)/mean(tissue_OPE$egg, na.rm = TRUE))*100
-(sd(tissue_OPE$fat, na.rm = TRUE)/mean(tissue_OPE$fat, na.rm = TRUE))*100
-(sd(tissue_OPE$liver, na.rm = TRUE)/mean(tissue_OPE$liver, na.rm = TRUE))*100
-(sd(tissue_OPE$muscle, na.rm = TRUE)/mean(tissue_OPE$muscle, na.rm = TRUE))*100
-(sd(tissue_OPE$preen_oil, na.rm = TRUE)/mean(tissue_OPE$preen_oil, na.rm = TRUE))*100
-
-
-# CVs for PBDEs in tissue
-
-(sd(tissue_PBDE$blood, na.rm = TRUE)/mean(tissue_PBDE$blood, na.rm = TRUE))*100
-(sd(tissue_PBDE$brain, na.rm = TRUE)/mean(tissue_PBDE$brain, na.rm = TRUE))*100
-(sd(tissue_PBDE$egg, na.rm = TRUE)/mean(tissue_PBDE$egg, na.rm = TRUE))*100
-(sd(tissue_PBDE$fat, na.rm = TRUE)/mean(tissue_PBDE$fat, na.rm = TRUE))*100
-(sd(tissue_PBDE$liver, na.rm = TRUE)/mean(tissue_PBDE$liver, na.rm = TRUE))*100
-(sd(tissue_PBDE$muscle, na.rm = TRUE)/mean(tissue_PBDE$muscle, na.rm = TRUE))*100
-(sd(tissue_PBDE$preen_oil, na.rm = TRUE)/mean(tissue_PBDE$preen_oil, na.rm = TRUE))*100
-
-
-# CVs for PFAS in tissue
-
-(sd(tissue_PFAS$blood, na.rm = TRUE)/mean(tissue_PFAS$blood, na.rm = TRUE))*100
-(sd(tissue_PFAS$brain, na.rm = TRUE)/mean(tissue_PFAS$brain, na.rm = TRUE))*100
-(sd(tissue_PFAS$egg, na.rm = TRUE)/mean(tissue_PFAS$egg, na.rm = TRUE))*100
-(sd(tissue_PFAS$fat, na.rm = TRUE)/mean(tissue_PFAS$fat, na.rm = TRUE))*100
-(sd(tissue_PFAS$liver, na.rm = TRUE)/mean(tissue_PFAS$liver, na.rm = TRUE))*100
-(sd(tissue_PFAS$muscle, na.rm = TRUE)/mean(tissue_PFAS$muscle, na.rm = TRUE))*100
-(sd(tissue_PFAS$preen_oil, na.rm = TRUE)/mean(tissue_PFAS$preen_oil, na.rm = TRUE))*100
-
-
-
-
-
-
-# CVs for metals by location
-
-(sd(location_metals$`Labrador Sea`, na.rm = TRUE)/mean(location_metals$`Labrador Sea`, na.rm = TRUE))*100
-(sd(location_metals$`Prince Leopold Island, NU`, na.rm = TRUE)/mean(location_metals$`Prince Leopold Island, NU`, na.rm = TRUE))*100
-
-
-# CVs for OPEs by location
-
-(sd(location_OPE$`Labrador Sea`, na.rm = TRUE)/mean(location_OPE$`Labrador Sea`, na.rm = TRUE))*100
-(sd(location_OPE$`Prince Leopold Island, NU`, na.rm = TRUE)/mean(location_OPE$`Prince Leopold Island, NU`, na.rm = TRUE))*100
-
-
-# CVs for PBDE by location
-
-(sd(location_PBDE$`Labrador Sea`, na.rm = TRUE)/mean(location_PBDE$`Labrador Sea`, na.rm = TRUE))*100
-(sd(location_PBDE$`Prince Leopold Island, NU`, na.rm = TRUE)/mean(location_PBDE$`Prince Leopold Island, NU`, na.rm = TRUE))*100
-
-
-# CVs for PFAS by location
-
-(sd(location_PFAS$`Labrador Sea`, na.rm = TRUE)/mean(location_PFAS$`Labrador Sea`, na.rm = TRUE))*100
-(sd(location_PFAS$`Prince Leopold Island, NU`, na.rm = TRUE)/mean(location_PFAS$`Prince Leopold Island, NU`, na.rm = TRUE))*100
-
-
-
-
-
-# CVs for metals by species
-
-(sd(species_metals$BLKI, na.rm = TRUE)/mean(species_metals$BLKI, na.rm = TRUE))*100
-(sd(species_metals$NOFU, na.rm = TRUE)/mean(species_metals$NOFU, na.rm = TRUE))*100
-
-
-# CVs for OPEs by species
-
-(sd(species_OPE$BLKI, na.rm = TRUE)/mean(species_OPE$BLKI, na.rm = TRUE))*100
-(sd(species_OPE$NOFU, na.rm = TRUE)/mean(species_OPE$NOFU, na.rm = TRUE))*100
-
-
-# CVs for PBDE by species
-
-(sd(species_PBDE$BLKI, na.rm = TRUE)/mean(species_PBDE$BLKI, na.rm = TRUE))*100
-(sd(species_PBDE$NOFU, na.rm = TRUE)/mean(species_PBDE$NOFU, na.rm = TRUE))*100
-
-# CVs for PFAS by species
-
-(sd(species_PFAS$BLKI, na.rm = TRUE)/mean(species_PFAS$BLKI, na.rm = TRUE))*100
-(sd(species_PFAS$NOFU, na.rm = TRUE)/mean(species_PFAS$NOFU, na.rm = TRUE))*100
-
-
-
-
-# CVs for metals by sex
-
-(sd(sex_metals$F, na.rm = TRUE)/mean(sex_metals$F, na.rm = TRUE))*100
-(sd(sex_metals$M, na.rm = TRUE)/mean(sex_metals$M, na.rm = TRUE))*100
-
-
-# CVs for OPEs by sex
-
-(sd(sex_OPE$F, na.rm = TRUE)/mean(sex_OPE$F, na.rm = TRUE))*100
-(sd(sex_OPE$M, na.rm = TRUE)/mean(sex_OPE$M, na.rm = TRUE))*100
-
-
-# CVs for PBDE by sex
-
-(sd(sex_PBDE$F, na.rm = TRUE)/mean(sex_PBDE$F, na.rm = TRUE))*100
-(sd(sex_PBDE$M, na.rm = TRUE)/mean(sex_PBDE$M, na.rm = TRUE))*100
-
-# CVs for PFAS by sex
-
-(sd(sex_PFAS$F, na.rm = TRUE)/mean(sex_PFAS$F, na.rm = TRUE))*100
-(sd(sex_PFAS$M, na.rm = TRUE)/mean(sex_PFAS$M, na.rm = TRUE))*100
-
-
 # PCA ---------------------------------------------------------------------
 
 
-# attempt of doing PCA on the data
-  # hint: this also didn't go well
-
-contam_PCA <- PCA(sum_data2[c(9:12)], scale.unit = TRUE, ncp = 2, graph = TRUE)
+# attempt of doing PCA on the four contaminant groups
 
 
-fviz_eig(contam_PCA,
+contaminant_PCA <- PCA(subset_data[c(5:8)],
+                       scale.unit = TRUE,
+                       ncp = 2,
+                       graph = TRUE)
+
+
+# visualizing the Scree plot of the PCA
+
+fviz_eig(contaminant_PCA,
          addlabels = TRUE,
          ylim = c(0, 30))
 
 
+# correlation matrix to identify any linear relationships
+# between the contaminants
 
-fviz_pca_biplot(contam_PCA, repel = TRUE,
-                col.var = "blue",
-                col.ind = "red")
-
-
-# k-means for all ------------------------------------------------------------
-
-
-# correlation matrix
-# shows there are no strong correlations between any of the contaminants
-
-cor(sum_data2[9:12],
+cor(subset_data[5:8],
     method = "spearman")
 
 
-# k-means test
-# total contaminants (PDBE, metals, PFAS, OPEs)
+# k-means clustering ---------------------------------------------------------
 
-kmeans_test <- kmeans(x = scale_data[c(10,15:17)],
+
+# Elbow method for determining number of clusters
+# 5 clusters is appropriate for the data
+
+
+fviz_nbclust(scale(subset_data[5:8]), kmeans, method = "wss")
+
+
+# k-means clustering on the total contaminant levels (PDBE, metals, PFAS, OPEs)
+
+
+kmeans_contaminants <- kmeans(x = scale(subset_data[5:8]),
                       centers = 5,
                       iter.max = 100,
                       nstart = 25,
                       algorithm = "Hartigan-Wong",
                       trace = FALSE)
 
-kmeans_test$cluster
-kmeans_test$centers
-kmeans_test$size
 
+# identifying the cluster centres
+
+kmeans_contaminants$centers
+
+
+# identifying the cluster sizes
+
+kmeans_contaminants$size
 
 
 #visualizing the clusters
 
-fviz_cluster(kmeans_test, geom = "point", data = scale_data[c(10,15:17)]) + 
-  scale_color_manual(values = wesanderson::wes_palette("IsleofDogs1",length(kmeans_test$size))) + 
-  scale_fill_manual(values = wesanderson::wes_palette("IsleofDogs1",length(kmeans_test$size))) + 
-  labs(title = "Cluster Plot",
+fviz_cluster(kmeans_contaminants,
+             geom = "point",
+             data = scale(subset_data[5:8])) + 
+  labs(title = "K-means Cluster Plot",
        fill = "Cluster",
        shape = "Cluster",
        color = "Cluster") + 
-  theme_bw() 
+  theme_bw()
 
 
-# Elbow method for determining number of clusters
-# 5 clusters is appropriate for the data in its current state
-
-#set.seed(69420)
-fviz_nbclust(scale_data[c(10,15:17)], kmeans, method = "wss")
+# Median, Min, Max, Mean, CV -------------------------------------------------
 
 
-# adding a column that shows which row each cluster correlates to
+# calculating the minimum, maximum, median, mean, and CVs for each
+# contaminant, grouped by tissue type
 
-sum_data$cluster <- kmeans_test$cluster
+Tissue_stats <- subset_data %>% 
+  group_by(Tissue) %>%
+  summarise(Metals_min = min(Metals),
+            Metals_median = median(Metals),
+            Metals_max = max(Metals),
+            Metals_mean = mean(Metals),
+            Metals_cv = (sd(Metals)/mean(Metals))*100,
+            OPE_min = min(OPE),
+            OPE_median = median(OPE),
+            OPE_max = max(OPE),
+            OPE_mean = mean(OPE),
+            OPE_CV = (sd(OPE)/mean(OPE))*100,
+            PBDE_min = min(PBDE),
+            PBDE_median = median(PBDE),
+            PBDE_max = max(PBDE),
+            PBDE_mean = mean(PBDE),
+            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
+            PFAS_min = min(PFAS),
+            PFAS_median = median(PFAS),
+            PFAS_max = max(PFAS),
+            PFAS_mean = mean(PFAS),
+            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+
+
+# calculating the minimum, maximum, median, mean, and CVs for each
+# contaminant, grouped by bird species
+
+Species_stats <- subset_data %>% 
+  group_by(species) %>%
+  summarise(Metals_min = min(Metals),
+            Metals_median = median(Metals),
+            Metals_max = max(Metals),
+            Metals_mean = mean(Metals),
+            Metals_cv = (sd(Metals)/mean(Metals))*100,
+            OPE_min = min(OPE),
+            OPE_median = median(OPE),
+            OPE_max = max(OPE),
+            OPE_mean = mean(OPE),
+            OPE_CV = (sd(OPE)/mean(OPE))*100,
+            PBDE_min = min(PBDE),
+            PBDE_median = median(PBDE),
+            PBDE_max = max(PBDE),
+            PBDE_mean = mean(PBDE),
+            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
+            PFAS_min = min(PFAS),
+            PFAS_median = median(PFAS),
+            PFAS_max = max(PFAS),
+            PFAS_mean = mean(PFAS),
+            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+
+
+# calculating the minimum, maximum, median, mean, and CVs for each
+# contaminant, grouped by location
+
+Location_stats <- subset_data %>% 
+  group_by(Collection.Location) %>%
+  summarise(Metals_min = min(Metals),
+            Metals_median = median(Metals),
+            Metals_max = max(Metals),
+            Metals_mean = mean(Metals),
+            Metals_cv = (sd(Metals)/mean(Metals))*100,
+            OPE_min = min(OPE),
+            OPE_median = median(OPE),
+            OPE_max = max(OPE),
+            OPE_mean = mean(OPE),
+            OPE_CV = (sd(OPE)/mean(OPE))*100,
+            PBDE_min = min(PBDE),
+            PBDE_median = median(PBDE),
+            PBDE_max = max(PBDE),
+            PBDE_mean = mean(PBDE),
+            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
+            PFAS_min = min(PFAS),
+            PFAS_median = median(PFAS),
+            PFAS_max = max(PFAS),
+            PFAS_mean = mean(PFAS),
+            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+
+
+# calculating the minimum, maximum, median, mean, and CVs for each
+# contaminant, grouped by bird sex
+
+Sex_stats <- subset_data %>% 
+  group_by(Sex) %>%
+  summarise(Metals_min = min(Metals),
+            Metals_median = median(Metals),
+            Metals_max = max(Metals),
+            Metals_mean = mean(Metals),
+            Metals_cv = (sd(Metals)/mean(Metals))*100,
+            OPE_min = min(OPE),
+            OPE_median = median(OPE),
+            OPE_max = max(OPE),
+            OPE_mean = mean(OPE),
+            OPE_CV = (sd(OPE)/mean(OPE))*100,
+            PBDE_min = min(PBDE),
+            PBDE_median = median(PBDE),
+            PBDE_max = max(PBDE),
+            PBDE_mean = mean(PBDE),
+            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
+            PFAS_min = min(PFAS),
+            PFAS_median = median(PFAS),
+            PFAS_max = max(PFAS),
+            PFAS_mean = mean(PFAS),
+            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+
+
+# ks-test tissue -------------------------------------------------------------
+
+# KS-test for tissues
+
+
+# Creating an empty matrix to store the ks-test p-values for tissue variables
+
+ks_tissue_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
+
+colnames(ks_tissue_matrix) <- c("blood",
+                                "brain",
+                                "egg",
+                                "fat",
+                                "liver",
+                                "muscle",
+                                "preen_oil")
+
+rownames(ks_tissue_matrix) <- c("blood",
+                                "brain",
+                                "egg",
+                                "fat",
+                                "liver",
+                                "muscle",
+                                "preen_oil")
+
+
+# creating a function, ks_tissue, to run the ks-test comparing two samples
+# (grouped by tissue type), and store the p-value in the ks_tissue_matrix
+
+# function takes one of the long contaminant data frames as an argument (df)
+
+ks_tissue <- function(df){
+  
+  # iterates through every tissue name in the rows
+  
+  for (i in rownames(ks_tissue_matrix)) {
+    
+    # iterates through every tissue name in the columns
+    
+    for (j in colnames(ks_tissue_matrix)) {
+      
+      # creates two data frames for the two tissue types being compared
+      
+      subset_df1 <- filter(df, Tissue == i)
+      subset_df2 <- filter(df, Tissue == j)
+      
+      # runs the ks-test for the contaminant levels in the two tissue types
+      
+      ks_tissue_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
+                                       y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(ks_tissue_matrix)
+  
+}
+
+# running the ks-tests for tissues for each contaminant
+
+metals_ks_matrix <- ks_tissue(long_df_metals)
+
+OPE_ks_matrix <- ks_tissue(long_df_OPE)
+
+PBDE_ks_matrix <- ks_tissue(long_df_PBDE)
+
+PFAS_ks_matrix <- ks_tissue(long_df_PFAS)
+
+
+# ks-test location --------------------------------------------------------
+
+
+# Creating an empty matrix to store the ks-test p-values for location variables
+
+ks_location_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(ks_location_matrix) <- c("Labrador Sea",
+                                  "Prince Leopold Island, NU")
+
+rownames(ks_location_matrix) <- c("Labrador Sea",
+                                  "Prince Leopold Island, NU")
+
+
+# creating a function, ks_location, to run the ks-test comparing two samples
+# (grouped by location), and store the p-value in the ks_location_matrix
+
+# function takes one of the long contaminant data frames as an argument (df)
+
+ks_location <- function(df){
+  
+  # iterates through every location name in the rows
+  
+  for (i in rownames(ks_location_matrix)) {
+    
+    # iterates through every location name in the columns
+    
+    for (j in colnames(ks_location_matrix)) {
+      
+      # creates two data frames for the two locations being compared
+      
+      subset_df1 <- filter(df, Collection.Location == i)
+      subset_df2 <- filter(df, Collection.Location == j)
+      
+      # runs the ks-test for the contaminant levels in the two locations 
+      
+      ks_location_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
+                                         y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(ks_location_matrix)
+  
+}
+
+# running the ks-tests for locations for each contaminant
+
+metals_ks_location <- ks_location(long_df_metals)
+
+OPE_ks_location <- ks_location(long_df_OPE)
+
+PBDE_ks_location <- ks_location(long_df_PBDE)
+
+PFAS_ks_location <- ks_location(long_df_PFAS)
+
+
+# ks-test species ---------------------------------------------------------
+
+
+# Creating an empty matrix to store the ks-test p-values for species variables
+
+ks_species_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(ks_species_matrix) <- c("BLKI",
+                                 "NOFU")
+
+rownames(ks_species_matrix) <- c("BLKI",
+                                 "NOFU")
+
+
+# creating a function, ks_species, to run the ks-test comparing two samples
+# (grouped by species), and store the p-value in the ks_species_matrix
+
+# function takes one of the long contaminant data frames as an argument (df)
+
+ks_species <- function(df){
+  
+  # iterates through every species name in the rows
+  
+  for (i in rownames(ks_species_matrix)) {
+    
+    # iterates through every species name in the columns
+    
+    for (j in colnames(ks_species_matrix)) {
+      
+      # creates two data frames for the two species being compared
+      
+      subset_df1 <- filter(df, species == i)
+      subset_df2 <- filter(df, species == j)
+      
+      # runs the ks-test for the contaminant levels in the two species 
+      
+      ks_species_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
+                                        y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(ks_species_matrix)
+  
+}
+
+
+# running the ks-tests for species for each contaminant
+
+metals_ks_species <- ks_species(long_df_metals)
+
+OPE_ks_species <- ks_species(long_df_OPE)
+
+PBDE_ks_species <- ks_species(long_df_PBDE)
+
+PFAS_ks_species <- ks_species(long_df_PFAS)
+
+
+# ks-test sex -------------------------------------------------------------
+
+
+# Creating an empty matrix to store the ks-test p-values for sex variables
+
+ks_sex_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(ks_sex_matrix) <- c("Female",
+                             "Male")
+
+rownames(ks_sex_matrix) <- c("Female",
+                             "Male")
+
+
+# creating a function, ks_sex, to run the ks-test comparing two samples
+# (grouped by sex), and store the p-value in the ks_sex_matrix
+
+# function takes one of the long contaminant data frames as an argument (df)
+
+ks_sex <- function(df){
+  
+  # iterates through every sex in the rows
+  
+  for (i in rownames(ks_sex_matrix)) {
+    
+    # iterates through every sex in the columns
+    
+    for (j in colnames(ks_sex_matrix)) {
+      
+      # creates two data frames for the two sexes being compared
+      
+      subset_df1 <- filter(df, Sex == i)
+      subset_df2 <- filter(df, Sex == j)
+      
+      # runs the ks-test for the contaminant levels in the two sexes 
+      
+      ks_sex_matrix[i,j] <- ks.test(x = subset_df1$Concentration,
+                                    y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(ks_sex_matrix)
+  
+}
+
+
+# running the ks-tests for sex for each contaminant
+
+metals_ks_sex <- ks_sex(long_df_metals)
+
+OPE_ks_sex <- ks_sex(long_df_OPE)
+
+PBDE_ks_sex <- ks_sex(long_df_PBDE)
+
+PFAS_ks_sex <- ks_sex(long_df_PFAS)
+
+
+# Heat Maps ---------------------------------------------------------------
+
+
+library(pheatmap)
+
+
+
+tissue_nondetect <- c((14/14)*100,(31/31)*100,(0/11)*100,(6/6)*100,(10/31)*100,(27/27)*100,(10/10)*100,
+                      (14/14)*100,(22/31)*100,(11/11)*100,(0/6)*100,(31/31)*100,(16/27)*100,(10/10)*100,
+                      (14/14)*100,(29/31)*100,(0/11)*100,(0/6)*100,(20/31)*100,(18/27)*100,(10/10)*100,
+                      (14/14)*100,(31/31)*100,(11/11)*100,(6/6)*100,(21/31)*100,(27/27)*100,(10/10)*100)
+
+tissue_col_name <- c("Blood", "Brain", "Egg", "Fat", "Liver", "Muscle", "Preen Oil")
+row_names_heat <- c("Metals", "OPEs", "PBDEs", "PFAS")
+
+
+
+tissue_nondetect_matrix <- matrix(data = tissue_nondetect,
+                                  nrow = 4,
+                                  byrow = TRUE,
+                                  dimnames = list(row_names_heat, tissue_col_name))
+
+
+pheatmap(tissue_nondetect_matrix,
+         display_numbers = T,
+         color = colorRampPalette(c('white','red'))(100),
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize_number = 15,
+         number_color = "black",
+         number_format = "%i",
+         fontsize = 15,
+         angle_col = 0,
+         annotation_legend = TRUE)
+
+
+
+
+
+
+
+
+
+species_nondetect <- c(82,64,
+                       67,100,
+                       69,74,
+                       88,100)
+
+species_colnames <- c("Northern Fulmar", "Black-Legged Kittiwake")
+
+species_nondetect_matrix <- matrix(data = species_nondetect,
+                                  nrow = 4,
+                                  byrow = TRUE,
+                                  dimnames = list(row_names_heat, species_colnames))
+
+
+myColour <- colorRampPalette(c("white", "red"))(100)
+
+myBreaks <- c(seq(min(species_nondetect_matrix), 0, length.out=ceiling(100/2) + 1), 
+              seq(max(species_nondetect_matrix)/100, max(species_nondetect_matrix), length.out=floor(100/2)))
+
+
+pheatmap(species_nondetect_matrix,
+         display_numbers = T,
+         color = myColour,
+         breaks = myBreaks,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize_number = 15,
+         number_color = "black",
+         number_format = "%i",
+         fontsize = 15,
+         angle_col = 0,
+         annotation_legend = TRUE)
+
+
+
+
+
+
+
+location_nondetect <- c(100,64,
+                        48,94,
+                       74,69,
+                       86,95)
+
+location_colnames <- c("Labrador Sea", "Prince Leopold Island")
+
+location_nondetect_matrix <- matrix(data = location_nondetect,
+                                   nrow = 4,
+                                   byrow = TRUE,
+                                   dimnames = list(row_names_heat, location_colnames))
+
+
+myColour <- colorRampPalette(c("white", "red"))(100)
+
+myBreaks <- c(seq(min(location_nondetect_matrix), 0, length.out=ceiling(100/2) + 1), 
+              seq(max(location_nondetect_matrix)/100, max(location_nondetect_matrix), length.out=floor(100/2)))
+
+
+pheatmap(location_nondetect_matrix,
+         display_numbers = T,
+         color = myColour,
+         breaks = myBreaks,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize_number = 15,
+         number_color = "black",
+         number_format = "%i",
+         fontsize = 15,
+         angle_col = 0,
+         annotation_legend = TRUE)
+
+
+
+
+
+
+
+
+
+
+
+sex_nondetect <- c(72,77,
+                   100,71,
+                        92,63,
+                        89,94)
+
+sex_colnames <- c("Male", "Female")
+
+sex_nondetect_matrix <- matrix(data = sex_nondetect,
+                                    nrow = 4,
+                                    byrow = TRUE,
+                                    dimnames = list(row_names_heat, sex_colnames))
+
+
+myColour <- colorRampPalette(c("white", "red"))(100)
+
+myBreaks <- c(seq(min(sex_nondetect_matrix), 0, length.out=ceiling(100/2) + 1), 
+              seq(max(sex_nondetect_matrix)/100, max(sex_nondetect_matrix), length.out=floor(100/2)))
+
+
+pheatmap(sex_nondetect_matrix,
+         display_numbers = T,
+         color = myColour,
+         breaks = myBreaks,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize_number = 15,
+         number_color = "black",
+         number_format = "%i",
+         fontsize = 15,
+         angle_col = 0,
+         annotation_legend = TRUE)
+
+
+
+
 
 
