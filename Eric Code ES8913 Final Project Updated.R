@@ -362,7 +362,7 @@ cor(subset_data[5:8],
 # 5 clusters is appropriate for the data
 
 
-fviz_nbclust(scale(subset_data[5:8]), kmeans, method = "wss")
+fviz_nbclust(scale(data[c(871,876:878)]), kmeans, method = "wss")
 
 
 # k-means clustering on the total contaminant levels (PDBE, metals, PFAS, OPEs)
@@ -632,6 +632,9 @@ ks_tissue <- function(df){
   return(ks_tissue_matrix)
   
 }
+
+
+ks_tissue(long_df_metals)
 
 tissue_KS <- as.data.frame(rbind(ks_tissue(long_df_metals),
                    ks_tissue(long_df_OPE),
