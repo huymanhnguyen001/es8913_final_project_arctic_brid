@@ -14,7 +14,7 @@ library(tidyr)
 library(tibble)
 library(ggplot2)
 library(ggpubr)
-
+source(paste0(getwd(), "./utils.R"))
 
 # Data Import and Manipulation -------------------------------------------------------
 
@@ -258,6 +258,10 @@ subset_data$species <- as.factor(subset_data$species)
 subset_data$Sex <- as.factor(subset_data$Sex)
 subset_data$Collection.Location <- as.factor(subset_data$Collection.Location)
 
+# Replace zero with NA values for plotting scatter plot -----------------------------------------------------------
+subset_data_NA <- zero_it_out(subset_data, 
+                              col = c("PBDE", "Metals", "PFAS", "OPE"),
+                              options = "by_NA")
 
 # Non-detect (zero) value replacement -------------------------------------
 
@@ -301,7 +305,6 @@ sum(duplicated(subset_data$Metals))
 sum(duplicated(subset_data$OPE))
 sum(duplicated(subset_data$PBDE))
 sum(duplicated(subset_data$PFAS))
-
 
 
 # Pivoting the Data Long -------------------------------------------------
@@ -952,11 +955,11 @@ species_MW <- add_column(species_MW,
 
 mw_sex_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
 
-colnames(mw_sex_matrix) <- c("Female",
-                             "Male")
+colnames(mw_sex_matrix) <- c("Male",
+                             "Female")
 
-rownames(mw_sex_matrix) <- c("Female",
-                             "Male")
+rownames(mw_sex_matrix) <- c("Male",
+                             "Female")
 
 
 # creating a function, ks_sex, to run the ks-test comparing two samples
@@ -1277,3 +1280,70 @@ spe_boxplot <- ggplot(data = long_df, aes(x = species, y = Concentration)) +
         legend.text = element_text(size=15),
         legend.position = "hidden",
         plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
+
+
+# Scatter plot Tissue with vs. without non-detects------------------------------------------------------------------
+
+metal_PBDE <- ggplot(subset_data, aes(x = Metals, 
+                                      y = PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE with non-detects")
+
+metal_PBDE_clean_scatter <- ggplot(subset_data_NA, aes(x = Metals, 
+                                                       y = PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE without non-detects")
+
+scatter_plot_tissue <- ggarrange(metal_PBDE, metal_PBDE_clean_scatter, 
+                                 ncol=2, 
+                                 common.legend = TRUE,
+                                 legend = "right")
+
+# Scatter plot Species with vs without non-detects-----------------------------------------------------------------
+metal_PBDE <- ggplot(subset_data, aes(x = Metals, 
+                                      y = PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE with non-detects")
+
+metal_PBDE_clean <- ggplot(subset_data_NA, aes(x = Metals, 
+                                               y = PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE without non-detects")
+
+scatter_plot_species <- ggarrange(metal_PBDE, metal_PBDE_clean, 
+                                  ncol=2, 
+                                  common.legend = TRUE,
+                                  legend = "right")
+
+# Scatter plot Location with vs. without non-detects---------------------------------------------------------------------
+
+OPE_PBDE <- ggplot(subset_data, aes(x = OPE,
+                                         y = PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "Total_OPE vs. PBDE with non-detects")
+
+OPE_PBDE_clean <- ggplot(subset_data_NA, aes(x = OPE,
+                                                    y = PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "Total_OPE vs. PBDE without non-detects")
+
+scatter_plot_location <- ggarrange(OPE_PBDE, OPE_PBDE_clean, 
+                                   ncol=2, 
+                                   common.legend = TRUE,
+                                   legend = "right")
+
+# Scatter plot Sex with vs without non-detects----------------------------------------------------------------
+PBDE_PFAS <- ggplot(subset_data, aes(x = PBDE,
+                                          y = PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "PBDE vs. PFAS with non-detects")
+
+PBDE_PFAS_clean <- ggplot(subset_data_NA, aes(x = PBDE,
+                                                     y = PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "PBDE vs. PFAS without non-detects")
+
+scatter_plot_sex <- ggarrange(PBDE_PFAS, PBDE_PFAS_clean, 
+                              ncol=2, 
+                              common.legend = TRUE,
+                              legend = "right")
