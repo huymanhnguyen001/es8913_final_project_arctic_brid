@@ -1165,7 +1165,6 @@ ks_tissue <- function(df){
   # returns the matrix filled with all the ks-test p-values
   
   return(ks_tissue_matrix)
-  
 }
 
 ```
