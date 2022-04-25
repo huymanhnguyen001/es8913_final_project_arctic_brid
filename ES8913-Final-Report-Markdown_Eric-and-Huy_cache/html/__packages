@@ -1,0 +1,11 @@
+readr
+data.table
+dplyr
+FactoMineR
+ggplot2
+factoextra
+tidyr
+pheatmap
+tibble
+kableExtra
+ggpubr
