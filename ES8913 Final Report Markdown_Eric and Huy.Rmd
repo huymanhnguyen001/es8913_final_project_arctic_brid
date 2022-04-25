@@ -37,6 +37,7 @@ PBDE - Polybrominated Diphenyl Ether
 PFAS - Per- and Polyfluoroalkyl Substances
 <br>
 
+
 ## Introduction
 <br>
 As the role of plastics in our daily lives has grown, so too has the levels of pollution that they cause.^1^ Plastic pollution has steadily increased over the last 60 years, so much so that it is now classified as a planetary boundary threat by multiple studies.^1-4^ The threat of plastics and plastic waste is further complicated by the unique nature of each product: plastics can be made from a variety of polymer types, all with unique physical-chemical and degradative properties.^5-6^ Not only this, but most plastics contain several chemical additive compounds that further diversify and complicate the issue of plastic pollution. Plastic additives are a diverse group of (typically) organic chemical compounds added to plastics to give them unique physical-chemical properties, with some common examples being flame retardants, UV stabilizers, and plasticizers.^5-7^ The amount at which these compounds are present in a plastic product vary greatly based on the application, and can range anywhere from < 1% to over 70% of the total product mass.^4-5^ Many of these additive compounds (aside from some reactive additives) are not covalently linked to the polymer backbone, instead being compounded or blended into the plastic.^5,8^

@@ -335,10 +335,11 @@ long_df_PFAS <- filter(long_df, Contaminant == "PFAS")
 # Attempt of doing PCA on the four contaminant groups
 
 
-contaminant_PCA <- PCA(subset_data[c(5:8)],
+contaminant_PCA <- PCA(data[c(871,876:878)],
                        scale.unit = TRUE,
                        ncp = 2,
-                       graph = TRUE)
+                       graph = FALSE)
+
 
 
 # visualizing the Scree plot of the PCA
@@ -351,7 +352,7 @@ fviz_eig(contaminant_PCA,
 # correlation matrix to identify any linear relationships
 # between the contaminants
 
-cor(subset_data[5:8],
+cor(data[c(871,876:878)],
     method = "spearman")
 
 
@@ -368,7 +369,7 @@ fviz_nbclust(scale(data[c(871,876:878)]), kmeans, method = "wss")
 # k-means clustering on the total contaminant levels (PDBE, metals, PFAS, OPEs)
 
 
-kmeans_contaminants <- kmeans(x = scale(subset_data[5:8]),
+kmeans_contaminants <- kmeans(x = scale(data[c(871,876:878)]),
                       centers = 5,
                       iter.max = 100,
                       nstart = 25,
@@ -390,7 +391,7 @@ kmeans_contaminants$size
 
 fviz_cluster(kmeans_contaminants,
              geom = "point",
-             data = scale(subset_data[5:8])) + 
+             data = scale(data[c(871,876:878)])) + 
   labs(title = "K-means Cluster Plot",
        fill = "Cluster",
        shape = "Cluster",
