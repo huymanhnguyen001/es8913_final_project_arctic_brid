@@ -77,6 +77,9 @@ library(tidyr)
 library(pheatmap)
 library(tibble)
 library(kableExtra)
+library(ggplot2)
+library(ggpubr)
+source(paste0(getwd(), "./utils.R"))
 
 # Reading in the data
 
@@ -324,6 +327,11 @@ subset_data$Tissue <- as.factor(subset_data$Tissue)
 subset_data$species <- as.factor(subset_data$species)
 subset_data$Sex <- as.factor(subset_data$Sex)
 subset_data$Collection.Location <- as.factor(subset_data$Collection.Location)
+
+# Replace zero with NA values for plotting scatter plot -----------------------------------------------------------
+subset_data_NA <- zero_it_out(subset_data, 
+                              col = c("PBDE", "Metals", "PFAS", "OPE"),
+                              options = "by_NA")
 
 ```
 
@@ -676,15 +684,81 @@ kable_tissue
 <br>
 The box plots for metals reflected the general statistics, with only the egg and liver being detected, with the egg tissue distribution being smaller and less variable than that of the liver tissue (Figure 5). Similarly, the OPE box plots were all around the LOD value, with the fat distribution being slightly less skewed and higher than the others. The PBDE box plots again were mostly focused at the LOD value, with egg and fat distributions being the major exceptions, and the fat distribution being the highest and most variable. Finally, the box plots for PFAS were all focused around the LOD value except for the liver distribution, as this was the only tissue in which PFAS were detected.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 5: "}
-
+```{r, echo = FALSE, fig.cap = "Figure 5: The distributions of metal, OPE, PBDE, and PFAS levels measured in seven tissue types", fig.width= 12, fig.height=10}
+ggplot(data = long_df, 
+       aes(x = Tissue, y = Concentration)) + 
+  facet_wrap(~Contaminant, scales = "free_y") +
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Tissue Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
 
 ```
 <br>
 The scatter plot was used as an attempt for manual clustering of pairs of contaminant groups across different tissue types. Here, the best clustering pair, metal vs. PBDE, was shown (Figure 6). The data distribution of the scatter plot showed that egg tissues clustered at low range of metal and PBDE concentrations, while liver tissues clustered at low concentration of PBDE but at slightly higher concentration of metal contaminants. 
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 6: Scatter plots of metals and PBDE levels measured in the seven tissue types, with and without non-detect values removed. Two rough clusters appear to form, separated into fat tissue and liver tissue."}
+```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 6: Scatter plots of metals and PBDE levels measured in the seven tissue types, with and without non-detect values removed. Two rough clusters appear to form, separated into fat tissue and liver tissue.", fig.width= 12, fig.height=7, dpi=300}
 
+metal_PBDE <- ggplot(subset_data, aes(x = Metals, 
+                                      y = PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE with non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=10), 
+        legend.text = element_text(size=10),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+metal_PBDE_clean_scatter <- ggplot(subset_data_NA, aes(x = Metals, 
+                                                       y = PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE without non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+ggarrange(metal_PBDE, metal_PBDE_clean_scatter, 
+                                 ncol=2, 
+                                 common.legend = TRUE,
+                                 legend = "right")
 ```
 <br>
 <br>
@@ -785,15 +859,79 @@ kable_species
 <br>
 Box plots of the distributions of each contaminant in the two species were mostly skewed around the LOD value (Figure 8), as expected from the general statistics. Several outlier points indicated most of the measurements that were above the LOD, with none appearing in the plots for OPEs and PFAS measured in Black-Legged Kittiwakes, as these were completely undetected. Metals measured in Black-Legged Kittiwakes had the least skewed of all the distributions, despite having a median value at the LOD value.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 8: The distributions of metal, OPE, PBDE, and PFAS levels measured in Northern Fulmars (NOFU) and Black-Legged Kittiwakes (BLKI). Nearly all of the distributions were heavily skewed around the non-detect value (0.015 ng/g ww). The distribution of metals in Black-Legged Kittiwakes had the least skewed of all distributions."}
+```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 8: The distributions of metal, OPE, PBDE, and PFAS levels measured in Northern Fulmars (NOFU) and Black-Legged Kittiwakes (BLKI). Nearly all of the distributions were heavily skewed around the non-detect value (0.015 ng/g ww). The distribution of metals in Black-Legged Kittiwakes had the least skewed of all distributions.", fig.width= 12, fig.height=10}
 
+ggplot(data = long_df, aes(x = species, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Species") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
 
 ```
 <br>
 Again, the scatter plot with best clustering was selected, this plotting metals vs. PBDE levels between the two bird species (Figure 9). The gradient of PBDE concentration helped clustering the detected values between our focal species, in which Black-legged kittiwake has higher concentrations of PBDE as compared to Northern Fulmar.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 9: Scatter plots of metals and PBDE levels measured in Northern Fulmars (NOFU) and Black-Legged Kittiwakes (BLKI), with and without non-detect values removed. Two rough clusters appear to form, both containing observations from both species, with a somewhat distinct separation of species based on PBDE levels."}
+```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 9: Scatter plots of metals and PBDE levels measured in Northern Fulmars (NOFU) and Black-Legged Kittiwakes (BLKI), with and without non-detect values removed. Two rough clusters appear to form, both containing observations from both species, with a somewhat distinct separation of species based on PBDE levels.", fig.width= 12, fig.height=7, dpi=300}
 
+metal_PBDE <- ggplot(subset_data, aes(x = Metals, 
+                                      y = PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE with non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=10), 
+        legend.text = element_text(size=10),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+metal_PBDE_clean <- ggplot(subset_data_NA, aes(x = Metals, 
+                                               y = PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE without non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+ggarrange(metal_PBDE, metal_PBDE_clean, 
+                                  ncol=2, 
+                                  common.legend = TRUE,
+                                  legend = "right")
 ```
 <br>
 <br>
@@ -892,8 +1030,28 @@ kable_location
 <br>
 The box plots for each sample visualized these distributions, showing in general that bulk of the distribution (IQR) is focused around the half-LOD (0.015 ng/g ww), with several outlier points indicating the few measurements that were greater than this LOD (Figure 11). While metals in Prince Leopold Island had the least skewed of all the distributions, several outliers were still identified.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 11: The distributions of metal, OPE, PBDE, and PFAS levels in samples collected in the Labrador Sea and Prince Leopold Island. Nearly all of the distributions were heavily skewed around the non-detect value (0.015 ng/g ww). The distribution of metals in Prince Leopold Island had the least skewed of all distributions."}
+```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 11: The distributions of metal, OPE, PBDE, and PFAS levels in samples collected in the Labrador Sea and Prince Leopold Island. Nearly all of the distributions were heavily skewed around the non-detect value (0.015 ng/g ww). The distribution of metals in Prince Leopold Island had the least skewed of all distributions.", fig.width= 12, fig.height=10}
 
+ggplot(data = long_df, aes(x = Collection.Location, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Location") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
 
 ```
 <br>
@@ -902,7 +1060,52 @@ A statistically significant result for the KS-tests (p < 0.05) comparing the con
 <br>
 Scatter plots showing different combinations of the four contaminant groups were created to try and 'manually' identify data which may have clustered together, based on the location variable (Figure 12). In general, there were no distinct clusters formed, as highlighted in Figure X, which compared PBDE and OPE levels by location, with and without the non-detect values removed. While the observations from Prince Leopold Island were somewhat grouped together in either plot, the observations were ultimately spread out with no distinct clustering.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 12: Scatter plots of OPE and PBDE levels measured in the Labrador Sea and Prince Leopold Island, with and without non-detect values removed. While the Prince Leopold Island measurments were somewhat close together, no distinct clustering by location was observed."}
+```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 12: Scatter plots of OPE and PBDE levels measured in the Labrador Sea and Prince Leopold Island, with and without non-detect values removed. While the Prince Leopold Island measurments were somewhat close together, no distinct clustering by location was observed.", fig.width= 12, fig.height=7, dpi=300}
+
+OPE_PBDE <- ggplot(subset_data, aes(x = OPE,
+                                         y = PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "Total_OPE vs. PBDE with non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=10), 
+        legend.text = element_text(size=10),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+OPE_PBDE_clean <- ggplot(subset_data_NA, aes(x = OPE,
+                                                    y = PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "Total_OPE vs. PBDE without non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+ggarrange(OPE_PBDE, OPE_PBDE_clean, 
+                                   ncol=2, 
+                                   common.legend = TRUE,
+                                   legend = "right")
 
 ```
 <br>
@@ -1001,8 +1204,28 @@ kable_sex
 <br>
     The boxplots visualized the distributions of each contaminant for both females and males (Figure 14). Again, most of the distributions were focused around the LOD value, with several outliers indicating the few observations that were above the detection limit. The distribution of metals in male birds was the lest skewed of all the distributions, with no outliers being identified beyond the maximum line.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 14: The distributions of metal, OPE, PBDE, and PFAS levels in samples collected in male and female birds. Nearly all of the distributions were heavily skewed around the non-detect value (0.015 ng/g ww), with several outliers. The distribution of metals in males was the least skewed of all distributions, with no outliers."}
+```{r, echo = FALSE, fig.cap = "Figure 14: The distributions of metal, OPE, PBDE, and PFAS levels in samples collected in male and female birds. Nearly all of the distributions were heavily skewed around the non-detect value (0.015 ng/g ww), with several outliers. The distribution of metals in males was the least skewed of all distributions, with no outliers.", fig.width= 12, fig.height=10}
 
+ggplot(data = long_df, aes(x = Sex, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Sex") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
 ```
 <br>
 A statistically significant result for the KS-tests (p < 0.05) comparing the contaminant distributions in males and females was found for OPEs, PBDEs, and PFAS. Additionally, the Mann-Whitney U-tests found a significant difference (p < 0.05) in the distributions of OPEs and PBDEs between males and females.
@@ -1010,7 +1233,52 @@ A statistically significant result for the KS-tests (p < 0.05) comparing the con
 <br>
 Scatter plots with different combinations of the four contaminant groups were again created, instead grouped by sex, to try and identify data clusters manually. The best plot was chosen as an example, this comparing PBDE and PFAS levels (Figure 15). While some of the measurements for male birds were closer together than those for females, in general there were no distinct clusters indicative of the sex grouping variable.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 15: Scatter plots of PBDE and PFAS levels measured in male and female birds, with and without non-detect values removed. While the male measurments were somewhat close together, no distinct clustering by sex was observed."}
+```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 15: Scatter plots of PBDE and PFAS levels measured in male and female birds, with and without non-detect values removed. While the male measurments were somewhat close together, no distinct clustering by sex was observed.", fig.width= 12, fig.height=7, dpi=300}
+
+PBDE_PFAS <- ggplot(subset_data, aes(x = PBDE,
+                                          y = PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "PBDE vs. PFAS with non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=10), 
+        legend.text = element_text(size=10),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+PBDE_PFAS_clean <- ggplot(subset_data_NA, aes(x = PBDE,
+                                                     y = PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "PBDE vs. PFAS without non-detects") + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 15,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 15,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        plot.margin = margin(t = 0.7, r = 0.2, l = 0.2, b = 0.7, "cm"))
+
+ggarrange(PBDE_PFAS, PBDE_PFAS_clean, 
+                              ncol=2, 
+                              common.legend = TRUE,
+                              legend = "right")
 
 ```
 <br>
@@ -1109,7 +1377,7 @@ kable_cor
 <br>
 <br>
 
-### KS-Tests
+### KS-Tests and Mann-Whitney U-Tests
 
 #### Tissue
 <br>
@@ -1168,6 +1436,52 @@ ks_tissue <- function(df){
   return(ks_tissue_matrix)
 }
 
+# MW Tissue 
+mw_tissue_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
+
+colnames(mw_tissue_matrix) <- c("blood",
+                                "brain",
+                                "egg",
+                                "fat",
+                                "liver",
+                                "muscle",
+                                "preen_oil")
+
+rownames(mw_tissue_matrix) <- c("blood",
+                                "brain",
+                                "egg",
+                                "fat",
+                                "liver",
+                                "muscle",
+                                "preen_oil")
+
+mw_tissue <- function(df){
+  
+  # iterates through every tissue name in the rows
+  
+  for (i in rownames(mw_tissue_matrix)) {
+    
+    # iterates through every tissue name in the columns
+    
+    for (j in colnames(mw_tissue_matrix)) {
+      
+      # creates two data frames for the two tissue types being compared
+      
+      subset_df1 <- filter(df, Tissue == i)
+      subset_df2 <- filter(df, Tissue == j)
+      
+      # runs the ks-test for the contaminant levels in the two tissue types
+      
+      mw_tissue_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                           y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_tissue_matrix)
+  
+}
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE}
@@ -1184,6 +1498,18 @@ tissue_KS <- add_column(tissue_KS,
                                            rep("PFAS", 7)),
                            .before = 1)
 
+tissue_MW <- as.data.frame(rbind(mw_tissue(long_df_metals),
+                                 mw_tissue(long_df_OPE),
+                                 mw_tissue(long_df_PBDE),
+                                 mw_tissue(long_df_PFAS)))
+
+tissue_MW <- add_column(tissue_MW,
+                        Contaminant = c(rep("Metals", 7),
+                                        rep("OPE", 7),
+                                        rep("PBDE", 7),
+                                        rep("PFAS", 7)),
+                        .before = 1)
+# KS test result
 kable_ks_tissue <- knitr::kable(tissue_KS,
              digits = 4,
              align = "c",
@@ -1194,6 +1520,16 @@ kable_ks_tissue <- kable_classic_2(kable_ks_tissue, full_width = F, html_font = 
 
 kable_ks_tissue
 
+# MW test result
+kable_mw_tissue <- knitr::kable(tissue_MW,
+             digits = 4,
+             align = "c",
+             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Each Tissue Type")
+
+kable_mw_tissue <- row_spec(kable_mw_tissue, c(8:14, 22:28), background = "#D3D3D3")
+kable_mw_tissue <- kable_classic_2(kable_mw_tissue, full_width = F, html_font = "calibri")
+
+kable_mw_tissue
 ```
 <br>
 <br>
@@ -1244,6 +1580,43 @@ ks_species <- function(df){
   return(ks_species_matrix)
 }
 
+# MW Species 
+mw_species_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(mw_species_matrix) <- c("BLKI",
+                                 "NOFU")
+
+rownames(mw_species_matrix) <- c("BLKI",
+                                 "NOFU")
+
+mw_species <- function(df){
+  
+  # iterates through every species name in the rows
+  
+  for (i in rownames(mw_species_matrix)) {
+    
+    # iterates through every species name in the columns
+    
+    for (j in colnames(mw_species_matrix)) {
+      
+      # creates two data frames for the two species being compared
+      
+      subset_df1 <- filter(df, species == i)
+      subset_df2 <- filter(df, species == j)
+      
+      # runs the ks-test for the contaminant levels in the two species 
+      
+      mw_species_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                            y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_species_matrix)
+  
+}
+
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE}
@@ -1260,6 +1633,19 @@ species_KS <- add_column(species_KS,
                                             "PFAS", "PFAS"),
                             .before = 1)
 
+species_MW <- as.data.frame(rbind(mw_species(long_df_metals),
+                                  mw_species(long_df_OPE),
+                                  mw_species(long_df_PBDE),
+                                  mw_species(long_df_PFAS)))
+
+
+species_MW <- add_column(species_MW,
+                         Contaminant = c("Metals", "Metals",
+                                         "OPE", "OPE",
+                                         "PBDE", "PBDE",
+                                         "PFAS", "PFAS"),
+                         .before = 1)
+# KS test result
 kable_ks_species <- knitr::kable(species_KS,
              digits = 4,
              align = "c",
@@ -1270,7 +1656,16 @@ kable_ks_species <- kable_classic_2(kable_ks_species, full_width = F, html_font 
 
 kable_ks_species
 
+# MW test result
+kable_mw_species <- knitr::kable(species_MW,
+             digits = 4,
+             align = "c",
+             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
+kable_mw_species <- row_spec(kable_mw_species, c(3:4, 7:8), background = "#D3D3D3")
+kable_mw_species <- kable_classic_2(kable_mw_species, full_width = F, html_font = "calibri")
+
+kable_mw_species
 ```
 <br>
 <br>
@@ -1322,6 +1717,44 @@ ks_location <- function(df){
   return(ks_location_matrix)
 }
 
+# MW Location
+# Creating an empty matrix to store the ks-test p-values for location variables
+
+mw_location_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(mw_location_matrix) <- c("Labrador Sea",
+                                  "Prince Leopold Island, NU")
+
+rownames(mw_location_matrix) <- c("Labrador Sea",
+                                  "Prince Leopold Island, NU")
+
+mw_location <- function(df){
+  
+  # iterates through every location name in the rows
+  
+  for (i in rownames(mw_location_matrix)) {
+    
+    # iterates through every location name in the columns
+    
+    for (j in colnames(mw_location_matrix)) {
+      
+      # creates two data frames for the two locations being compared
+      
+      subset_df1 <- filter(df, Collection.Location == i)
+      subset_df2 <- filter(df, Collection.Location == j)
+      
+      # runs the ks-test for the contaminant levels in the two locations 
+      
+      mw_location_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                         y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_location_matrix)
+  
+}
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE}
@@ -1337,7 +1770,19 @@ location_KS <- add_column(location_KS,
                                          "PBDE", "PBDE",
                                          "PFAS", "PFAS"),
                          .before = 1)
+location_MW <- as.data.frame(rbind(mw_location(long_df_metals),
+                                   mw_location(long_df_OPE),
+                                   mw_location(long_df_PBDE),
+                                   mw_location(long_df_PFAS)))
 
+
+location_MW <- add_column(location_MW,
+                          Contaminant = c("Metals", "Metals",
+                                          "OPE", "OPE",
+                                          "PBDE", "PBDE",
+                                          "PFAS", "PFAS"),
+                          .before = 1)
+# KS test result
 kable_ks_location <- knitr::kable(location_KS,
              digits = 4,
              align = "c",
@@ -1348,6 +1793,16 @@ kable_ks_location <- kable_classic_2(kable_ks_location, full_width = F, html_fon
 
 kable_ks_location
 
+# MW test result
+kable_mw_location <- knitr::kable(location_MW,
+             digits = 4,
+             align = "c",
+             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+
+kable_mw_location <- row_spec(kable_mw_location, c(3:4, 7:8), background = "#D3D3D3")
+kable_mw_location <- kable_classic_2(kable_mw_location, full_width = F, html_font = "calibri")
+
+kable_mw_location
 ```
 <br>
 <br>
@@ -1358,11 +1813,11 @@ kable_ks_location
 
 ks_sex_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
 
-colnames(ks_sex_matrix) <- c("Female",
-                             "Male")
+colnames(ks_sex_matrix) <- c("Male",
+                             "Female")
 
-rownames(ks_sex_matrix) <- c("Female",
-                             "Male")
+rownames(ks_sex_matrix) <- c("Male",
+                             "Female")
 
 
 # creating a function, ks_sex, to run the ks-test comparing two samples
@@ -1398,6 +1853,49 @@ ks_sex <- function(df){
   
 }
 
+# MW Sex
+
+mw_sex_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(mw_sex_matrix) <- c("Male",
+                             "Female")
+
+rownames(mw_sex_matrix) <- c("Male",
+                             "Female")
+
+
+# creating a function, ks_sex, to run the ks-test comparing two samples
+# (grouped by sex), and store the p-value in the ks_sex_matrix
+
+# function takes one of the long contaminant data frames as an argument (df)
+
+mw_sex <- function(df){
+  
+  # iterates through every sex in the rows
+  
+  for (i in rownames(mw_sex_matrix)) {
+    
+    # iterates through every sex in the columns
+    
+    for (j in colnames(mw_sex_matrix)) {
+      
+      # creates two data frames for the two sexes being compared
+      
+      subset_df1 <- filter(df, Sex == i)
+      subset_df2 <- filter(df, Sex == j)
+      
+      # runs the ks-test for the contaminant levels in the two sexes 
+      
+      mw_sex_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                    y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_sex_matrix)
+  
+}
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE}
@@ -1420,6 +1918,26 @@ sex_KS <- add_column(sex_KS,
                                           "PFAS", "PFAS"),
                           .before = 1)
 
+metals_mw_sex <- mw_sex(long_df_metals)
+OPE_mw_sex <- mw_sex(long_df_OPE)
+PBDE_mw_sex <- mw_sex(long_df_PBDE)
+PFAS_mw_sex <- mw_sex(long_df_PFAS)
+
+
+
+sex_MW <- as.data.frame(rbind(metals_mw_sex,
+                              OPE_mw_sex,
+                              PBDE_mw_sex,
+                              PFAS_mw_sex))
+
+sex_MW <- add_column(sex_MW,
+                     Contaminant = c("Metals", "Metals",
+                                     "OPE", "OPE",
+                                     "PBDE", "PBDE",
+                                     "PFAS", "PFAS"),
+                     .before = 1)
+
+# KS test result
 kable_ks_sex <- knitr::kable(sex_KS,
              digits = 4,
              align = "c",
@@ -1430,6 +1948,16 @@ kable_ks_sex <- kable_classic_2(kable_ks_sex, full_width = F, html_font = "calib
 
 kable_ks_sex
 
+# MW test result
+kable_mw_sex <- knitr::kable(sex_MW,
+             digits = 4,
+             align = "c",
+             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+
+kable_mw_sex <- row_spec(kable_mw_sex, c(3:4, 7:8), background = "#D3D3D3")
+kable_mw_sex <- kable_classic_2(kable_mw_sex, full_width = F, html_font = "calibri")
+
+kable_mw_sex
 ```
 <br>
 <br>
