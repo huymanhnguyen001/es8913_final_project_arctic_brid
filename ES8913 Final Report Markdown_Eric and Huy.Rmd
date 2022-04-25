@@ -76,6 +76,9 @@ library(tidyr)
 library(pheatmap)
 library(tibble)
 library(kableExtra)
+library(ggplot2)
+library(ggpubr)
+source(paste0(getwd(), "./utils.R"))
 
 # Reading in the data
 
@@ -323,6 +326,11 @@ subset_data$Tissue <- as.factor(subset_data$Tissue)
 subset_data$species <- as.factor(subset_data$species)
 subset_data$Sex <- as.factor(subset_data$Sex)
 subset_data$Collection.Location <- as.factor(subset_data$Collection.Location)
+
+# Replace zero with NA values for plotting scatter plot -----------------------------------------------------------
+subset_data_NA <- zero_it_out(subset_data, 
+                              col = c("PBDE", "Metals", "PFAS", "OPE"),
+                              options = "by_NA")
 
 ```
 
@@ -671,8 +679,30 @@ kable_tissue
 <br>
 The box plots for metals reflected the general statistics, with only the egg and liver being detected, with the egg tissue distribution being smaller and less variable than that of the liver tissue (Figure 5). Similarly, the OPE box plots were all around the LOD value, with the fat distribution being slightly less skewed and higher than the others. The PBDE box plots again were mostly focused at the LOD value, with egg and fat distributions being the major exceptions, and the fat distribution being the highest and most variable. Finally, the box plots for PFAS were all focused around the LOD value except for the liver distribution, as this was the only tissue in which PFAS were detected.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 5: "}
-
+```{r, echo = FALSE, fig.cap = "Figure 5: Box plots of metals, PBDE, PFAS and OPE across seven tissue types"}
+ggplot(data = long_df, 
+       aes(x = Tissue, y = Concentration)) + 
+  facet_wrap(~Contaminant, scales = "free_y") +
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Tissue Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
 
 ```
 <br>
@@ -1104,7 +1134,7 @@ kable_cor
 <br>
 <br>
 
-### KS-Tests
+### KS-Tests and Mann-Whitney U-Tests
 
 #### Tissue
 <br>
