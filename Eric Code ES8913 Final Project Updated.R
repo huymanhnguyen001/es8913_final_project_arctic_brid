@@ -12,7 +12,9 @@ library(FactoMineR)
 library(factoextra)
 library(tidyr)
 library(tibble)
-
+library(ggplot2)
+library(ggpubr)
+source(paste0(getwd(), "./utils.R"))
 
 # Data Import and Manipulation -------------------------------------------------------
 
@@ -256,6 +258,10 @@ subset_data$species <- as.factor(subset_data$species)
 subset_data$Sex <- as.factor(subset_data$Sex)
 subset_data$Collection.Location <- as.factor(subset_data$Collection.Location)
 
+# Replace zero with NA values for plotting scatter plot -----------------------------------------------------------
+subset_data_NA <- zero_it_out(subset_data, 
+                              col = c("PBDE", "Metals", "PFAS", "OPE"),
+                              options = "by_NA")
 
 # Non-detect (zero) value replacement -------------------------------------
 
@@ -299,7 +305,6 @@ sum(duplicated(subset_data$Metals))
 sum(duplicated(subset_data$OPE))
 sum(duplicated(subset_data$PBDE))
 sum(duplicated(subset_data$PFAS))
-
 
 
 # Pivoting the Data Long -------------------------------------------------
@@ -707,11 +712,6 @@ location_KS <- add_column(location_KS,
                          .before = 1)
 
 
-
-
-
-
-
 # ks-test species ---------------------------------------------------------
 
 
@@ -839,6 +839,236 @@ sex_KS <- add_column(sex_KS,
                                           "PFAS", "PFAS"),
                           .before = 1)
 
+# Mann-Whitney test -------------------------------------------------------
+
+# MW Tissue -------------------------------------------------------
+mw_tissue_matrix <- matrix(data = NA, nrow = 7, ncol = 7)
+
+colnames(mw_tissue_matrix) <- c("blood",
+                                "brain",
+                                "egg",
+                                "fat",
+                                "liver",
+                                "muscle",
+                                "preen_oil")
+
+rownames(mw_tissue_matrix) <- c("blood",
+                                "brain",
+                                "egg",
+                                "fat",
+                                "liver",
+                                "muscle",
+                                "preen_oil")
+
+mw_tissue <- function(df){
+  
+  # iterates through every tissue name in the rows
+  
+  for (i in rownames(mw_tissue_matrix)) {
+    
+    # iterates through every tissue name in the columns
+    
+    for (j in colnames(mw_tissue_matrix)) {
+      
+      # creates two data frames for the two tissue types being compared
+      
+      subset_df1 <- filter(df, Tissue == i)
+      subset_df2 <- filter(df, Tissue == j)
+      
+      # runs the ks-test for the contaminant levels in the two tissue types
+      
+      mw_tissue_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                           y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_tissue_matrix)
+  
+}
+
+tissue_MW <- as.data.frame(rbind(mw_tissue(long_df_metals),
+                                 mw_tissue(long_df_OPE),
+                                 mw_tissue(long_df_PBDE),
+                                 mw_tissue(long_df_PFAS)))
+
+tissue_MW <- add_column(tissue_MW,
+                        Contaminant = c(rep("Metals", 7),
+                                        rep("OPE", 7),
+                                        rep("PBDE", 7),
+                                        rep("PFAS", 7)),
+                        .before = 1)
+
+
+# MW Species --------------------------------------------------------
+
+mw_species_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(mw_species_matrix) <- c("BLKI",
+                                 "NOFU")
+
+rownames(mw_species_matrix) <- c("BLKI",
+                                 "NOFU")
+
+mw_species <- function(df){
+  
+  # iterates through every species name in the rows
+  
+  for (i in rownames(mw_species_matrix)) {
+    
+    # iterates through every species name in the columns
+    
+    for (j in colnames(mw_species_matrix)) {
+      
+      # creates two data frames for the two species being compared
+      
+      subset_df1 <- filter(df, species == i)
+      subset_df2 <- filter(df, species == j)
+      
+      # runs the ks-test for the contaminant levels in the two species 
+      
+      mw_species_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                            y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_species_matrix)
+  
+}
+
+species_MW <- as.data.frame(rbind(mw_species(long_df_metals),
+                                  mw_species(long_df_OPE),
+                                  mw_species(long_df_PBDE),
+                                  mw_species(long_df_PFAS)))
+
+
+species_MW <- add_column(species_MW,
+                         Contaminant = c("Metals", "Metals",
+                                         "OPE", "OPE",
+                                         "PBDE", "PBDE",
+                                         "PFAS", "PFAS"),
+                         .before = 1)
+
+
+
+# MW Sex------------------------------------------------------------
+
+mw_sex_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(mw_sex_matrix) <- c("Male",
+                             "Female")
+
+rownames(mw_sex_matrix) <- c("Male",
+                             "Female")
+
+
+# creating a function, ks_sex, to run the ks-test comparing two samples
+# (grouped by sex), and store the p-value in the ks_sex_matrix
+
+# function takes one of the long contaminant data frames as an argument (df)
+
+mw_sex <- function(df){
+  
+  # iterates through every sex in the rows
+  
+  for (i in rownames(mw_sex_matrix)) {
+    
+    # iterates through every sex in the columns
+    
+    for (j in colnames(mw_sex_matrix)) {
+      
+      # creates two data frames for the two sexes being compared
+      
+      subset_df1 <- filter(df, Sex == i)
+      subset_df2 <- filter(df, Sex == j)
+      
+      # runs the ks-test for the contaminant levels in the two sexes 
+      
+      mw_sex_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                    y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_sex_matrix)
+  
+}
+
+metals_mw_sex <- mw_sex(long_df_metals)
+OPE_mw_sex <- mw_sex(long_df_OPE)
+PBDE_mw_sex <- mw_sex(long_df_PBDE)
+PFAS_mw_sex <- mw_sex(long_df_PFAS)
+
+
+
+sex_MW <- as.data.frame(rbind(metals_mw_sex,
+                              OPE_mw_sex,
+                              PBDE_mw_sex,
+                              PFAS_mw_sex))
+
+sex_MW <- add_column(sex_MW,
+                     Contaminant = c("Metals", "Metals",
+                                     "OPE", "OPE",
+                                     "PBDE", "PBDE",
+                                     "PFAS", "PFAS"),
+                     .before = 1)
+
+# MW Location-------------------------------------------------------
+# Creating an empty matrix to store the ks-test p-values for location variables
+
+mw_location_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
+
+colnames(mw_location_matrix) <- c("Labrador Sea",
+                                  "Prince Leopold Island, NU")
+
+rownames(mw_location_matrix) <- c("Labrador Sea",
+                                  "Prince Leopold Island, NU")
+
+mw_location <- function(df){
+  
+  # iterates through every location name in the rows
+  
+  for (i in rownames(mw_location_matrix)) {
+    
+    # iterates through every location name in the columns
+    
+    for (j in colnames(mw_location_matrix)) {
+      
+      # creates two data frames for the two locations being compared
+      
+      subset_df1 <- filter(df, Collection.Location == i)
+      subset_df2 <- filter(df, Collection.Location == j)
+      
+      # runs the ks-test for the contaminant levels in the two locations 
+      
+      mw_location_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
+                                         y = subset_df2$Concentration)$p.value
+    }
+  }
+  
+  # returns the matrix filled with all the ks-test p-values
+  
+  return(mw_location_matrix)
+  
+}
+
+
+location_MW <- as.data.frame(rbind(mw_location(long_df_metals),
+                                   mw_location(long_df_OPE),
+                                   mw_location(long_df_PBDE),
+                                   mw_location(long_df_PFAS)))
+
+
+location_MW <- add_column(location_MW,
+                          Contaminant = c("Metals", "Metals",
+                                          "OPE", "OPE",
+                                          "PBDE", "PBDE",
+                                          "PFAS", "PFAS"),
+                          .before = 1)
 
 # Heat Maps ---------------------------------------------------------------
 
@@ -874,14 +1104,6 @@ pheatmap(tissue_nondetect_matrix,
          angle_col = 0,
          annotation_legend = TRUE)
 
-
-
-
-
-
-
-
-
 species_nondetect <- c(82,64,
                        67,100,
                        69,74,
@@ -911,12 +1133,6 @@ pheatmap(species_nondetect_matrix,
          angle_col = 0,
          annotation_legend = TRUE)
 
-
-
-
-
-
-
 location_nondetect <- c(100,64,
                         48,94,
                        74,69,
@@ -944,16 +1160,6 @@ pheatmap(location_nondetect_matrix,
          fontsize = 15,
          angle_col = 0,
          annotation_legend = TRUE)
-
-
-
-
-
-
-
-
-
-
 
 sex_nondetect <- c(72,77,
                    100,71,
@@ -984,3 +1190,163 @@ pheatmap(sex_nondetect_matrix,
          angle_col = 0,
          annotation_legend = TRUE)
 
+# Box plots Tissue with non-detects -------------------------------------------------
+tissue_boxplot <- ggplot(data = long_df, 
+                         aes(x = Tissue, y = Concentration)) + 
+  facet_wrap(~Contaminant, scales = "free_y") +
+  geom_boxplot(aes(fill = Contaminant)) + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Tissue Type") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15,
+                                   angle = 45, 
+                                   hjust = 1), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
+
+# Box plots Location with non-detects---------------------------------------------------------
+
+location_boxplot <- ggplot(data = long_df, aes(x = Collection.Location, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Location") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
+
+# Box plots Sex with non-detects-----------------------------------------------------
+
+sex_boxplot <- ggplot(data = long_df, aes(x = Sex, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Sex") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
+
+# Box plots Species with non-detects-------------------------------------------------
+
+spe_boxplot <- ggplot(data = long_df, aes(x = species, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Species") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
+
+
+# Scatter plot Tissue with vs. without non-detects------------------------------------------------------------------
+
+metal_PBDE <- ggplot(subset_data, aes(x = Metals, 
+                                      y = PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE with non-detects")
+
+metal_PBDE_clean_scatter <- ggplot(subset_data_NA, aes(x = Metals, 
+                                                       y = PBDE)) +
+  geom_point(aes(color = Tissue)) +
+  labs(title = "metal vs. PBDE without non-detects")
+
+scatter_plot_tissue <- ggarrange(metal_PBDE, metal_PBDE_clean_scatter, 
+                                 ncol=2, 
+                                 common.legend = TRUE,
+                                 legend = "right")
+
+# Scatter plot Species with vs without non-detects-----------------------------------------------------------------
+metal_PBDE <- ggplot(subset_data, aes(x = Metals, 
+                                      y = PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE with non-detects")
+
+metal_PBDE_clean <- ggplot(subset_data_NA, aes(x = Metals, 
+                                               y = PBDE)) +
+  geom_point(aes(color = species)) +
+  labs(title = "metal vs. PBDE without non-detects")
+
+scatter_plot_species <- ggarrange(metal_PBDE, metal_PBDE_clean, 
+                                  ncol=2, 
+                                  common.legend = TRUE,
+                                  legend = "right")
+
+# Scatter plot Location with vs. without non-detects---------------------------------------------------------------------
+
+OPE_PBDE <- ggplot(subset_data, aes(x = OPE,
+                                         y = PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "Total_OPE vs. PBDE with non-detects")
+
+OPE_PBDE_clean <- ggplot(subset_data_NA, aes(x = OPE,
+                                                    y = PBDE)) +
+  geom_point(aes(color = Collection.Location)) +
+  labs(title = "Total_OPE vs. PBDE without non-detects")
+
+scatter_plot_location <- ggarrange(OPE_PBDE, OPE_PBDE_clean, 
+                                   ncol=2, 
+                                   common.legend = TRUE,
+                                   legend = "right")
+
+# Scatter plot Sex with vs without non-detects----------------------------------------------------------------
+PBDE_PFAS <- ggplot(subset_data, aes(x = PBDE,
+                                          y = PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "PBDE vs. PFAS with non-detects")
+
+PBDE_PFAS_clean <- ggplot(subset_data_NA, aes(x = PBDE,
+                                                     y = PFAS)) +
+  geom_point(aes(color = Sex)) +
+  labs(title = "PBDE vs. PFAS without non-detects")
+
+scatter_plot_sex <- ggarrange(PBDE_PFAS, PBDE_PFAS_clean, 
+                              ncol=2, 
+                              common.legend = TRUE,
+                              legend = "right")
