@@ -11,6 +11,7 @@ library(dplyr)
 library(FactoMineR)
 library(factoextra)
 library(tidyr)
+library(tibble)
 
 
 # Data Import and Manipulation -------------------------------------------------------
@@ -290,6 +291,17 @@ subset_data$PFAS[subset_data$PFAS == 0]<-runif(sum(subset_data$PFAS == 0),
                                                max=0.0155000)
 
 
+# checking for duplicate values in each of the variables with 0's replaced
+# duplicate returns a TRUE/FALSE for each duplicate, so by taking the sum
+# any value greater than 0 will mean there are still ties in the data
+
+sum(duplicated(subset_data$Metals))
+sum(duplicated(subset_data$OPE))
+sum(duplicated(subset_data$PBDE))
+sum(duplicated(subset_data$PFAS))
+
+
+
 # Pivoting the Data Long -------------------------------------------------
 
 
@@ -315,7 +327,7 @@ long_df_PFAS <- filter(long_df, Contaminant == "PFAS")
 # PCA ---------------------------------------------------------------------
 
 
-# attempt of doing PCA on the four contaminant groups
+# Attempt of doing PCA on the four contaminant groups
 
 
 contaminant_PCA <- PCA(subset_data[c(5:8)],
@@ -387,109 +399,174 @@ fviz_cluster(kmeans_contaminants,
 # calculating the minimum, maximum, median, mean, and CVs for each
 # contaminant, grouped by tissue type
 
-Tissue_stats <- subset_data %>% 
-  group_by(Tissue) %>%
-  summarise(Metals_min = min(Metals),
-            Metals_median = median(Metals),
-            Metals_max = max(Metals),
-            Metals_mean = mean(Metals),
-            Metals_cv = (sd(Metals)/mean(Metals))*100,
-            OPE_min = min(OPE),
-            OPE_median = median(OPE),
-            OPE_max = max(OPE),
-            OPE_mean = mean(OPE),
-            OPE_CV = (sd(OPE)/mean(OPE))*100,
-            PBDE_min = min(PBDE),
-            PBDE_median = median(PBDE),
-            PBDE_max = max(PBDE),
-            PBDE_mean = mean(PBDE),
-            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
-            PFAS_min = min(PFAS),
-            PFAS_median = median(PFAS),
-            PFAS_max = max(PFAS),
-            PFAS_mean = mean(PFAS),
-            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+tissue_stats <- rbind((subset_data %>% 
+                          group_by(Tissue) %>%
+                          summarise("Minimum (ng/g ww)" = min(Metals),
+                                    "Median (ng/g ww)" = median(Metals),
+                                    "Maximum (ng/g ww)" = max(Metals),
+                                    "Mean (ng/g ww)" = mean(Metals),
+                                    "CV (%)" = (sd(Metals)/mean(Metals))*100)),
+                       
+                       (subset_data %>% 
+                          group_by(Tissue) %>%
+                          summarise("Minimum (ng/g ww)" = min(OPE),
+                                    "Median (ng/g ww)" = median(OPE),
+                                    "Maximum (ng/g ww)" = max(OPE),
+                                    "Mean (ng/g ww)" = mean(OPE),
+                                    "CV (%)" = (sd(OPE)/mean(OPE))*100)),          
+                       
+                       (subset_data %>% 
+                          group_by(Tissue) %>%
+                          summarise("Minimum (ng/g ww)" = min(PBDE),
+                                    "Median (ng/g ww)" = median(PBDE),
+                                    "Maximum (ng/g ww)" = max(PBDE),
+                                    "Mean (ng/g ww)" = mean(PBDE),
+                                    "CV (%)" = (sd(PBDE)/mean(PBDE))*100)),
+                       
+                       (subset_data %>% 
+                          group_by(Tissue) %>%
+                          summarise("Minimum (ng/g ww)" = min(PFAS),
+                                    "Median (ng/g ww)" = median(PFAS),
+                                    "Maximum (ng/g ww)" = max(PFAS),
+                                    "Mean (ng/g ww)" = mean(PFAS),
+                                    "CV (%)" = (sd(PFAS)/mean(PFAS))*100)))
+
+tissue_stats <- add_column(tissue_stats,
+                            Contaminant = c(rep("Metals", 7),
+                                            rep("OPE", 7),
+                                            rep("PBDE", 7),
+                                            rep("PFAS", 7)),
+                            .before = 1)
 
 
 # calculating the minimum, maximum, median, mean, and CVs for each
 # contaminant, grouped by bird species
 
-Species_stats <- subset_data %>% 
-  group_by(species) %>%
-  summarise(Metals_min = min(Metals),
-            Metals_median = median(Metals),
-            Metals_max = max(Metals),
-            Metals_mean = mean(Metals),
-            Metals_cv = (sd(Metals)/mean(Metals))*100,
-            OPE_min = min(OPE),
-            OPE_median = median(OPE),
-            OPE_max = max(OPE),
-            OPE_mean = mean(OPE),
-            OPE_CV = (sd(OPE)/mean(OPE))*100,
-            PBDE_min = min(PBDE),
-            PBDE_median = median(PBDE),
-            PBDE_max = max(PBDE),
-            PBDE_mean = mean(PBDE),
-            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
-            PFAS_min = min(PFAS),
-            PFAS_median = median(PFAS),
-            PFAS_max = max(PFAS),
-            PFAS_mean = mean(PFAS),
-            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+species_stats <- rbind((subset_data %>% 
+                           group_by(species) %>%
+                           summarise("Minimum (ng/g ww)" = min(Metals),
+                                     "Median (ng/g ww)" = median(Metals),
+                                     "Maximum (ng/g ww)" = max(Metals),
+                                     "Mean (ng/g ww)" = mean(Metals),
+                                     "CV (%)" = (sd(Metals)/mean(Metals))*100)),
+                        
+                        (subset_data %>% 
+                           group_by(species) %>%
+                           summarise("Minimum (ng/g ww)" = min(OPE),
+                                     "Median (ng/g ww)" = median(OPE),
+                                     "Maximum (ng/g ww)" = max(OPE),
+                                     "Mean (ng/g ww)" = mean(OPE),
+                                     "CV (%)" = (sd(OPE)/mean(OPE))*100)),          
+                        
+                        (subset_data %>% 
+                           group_by(species) %>%
+                           summarise("Minimum (ng/g ww)" = min(PBDE),
+                                     "Median (ng/g ww)" = median(PBDE),
+                                     "Maximum (ng/g ww)" = max(PBDE),
+                                     "Mean (ng/g ww)" = mean(PBDE),
+                                     "CV (%)" = (sd(PBDE)/mean(PBDE))*100)),
+                        
+                        (subset_data %>% 
+                           group_by(species) %>%
+                           summarise("Minimum (ng/g ww)" = min(PFAS),
+                                     "Median (ng/g ww)" = median(PFAS),
+                                     "Maximum (ng/g ww)" = max(PFAS),
+                                     "Mean (ng/g ww)" = mean(PFAS),
+                                     "CV (%)" = (sd(PFAS)/mean(PFAS))*100)))
+
+species_stats <- add_column(species_stats,
+                             Contaminant = c("Metals", "Metals",
+                                             "OPE", "OPE",
+                                             "PBDE", "PBDE",
+                                             "PFAS", "PFAS"),
+                             .before = 1)
 
 
 # calculating the minimum, maximum, median, mean, and CVs for each
 # contaminant, grouped by location
 
-Location_stats <- subset_data %>% 
+location_stats <- rbind((subset_data %>% 
   group_by(Collection.Location) %>%
-  summarise(Metals_min = min(Metals),
-            Metals_median = median(Metals),
-            Metals_max = max(Metals),
-            Metals_mean = mean(Metals),
-            Metals_cv = (sd(Metals)/mean(Metals))*100,
-            OPE_min = min(OPE),
-            OPE_median = median(OPE),
-            OPE_max = max(OPE),
-            OPE_mean = mean(OPE),
-            OPE_CV = (sd(OPE)/mean(OPE))*100,
-            PBDE_min = min(PBDE),
-            PBDE_median = median(PBDE),
-            PBDE_max = max(PBDE),
-            PBDE_mean = mean(PBDE),
-            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
-            PFAS_min = min(PFAS),
-            PFAS_median = median(PFAS),
-            PFAS_max = max(PFAS),
-            PFAS_mean = mean(PFAS),
-            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+  summarise("Minimum (ng/g ww)" = min(Metals),
+            "Median (ng/g ww)" = median(Metals),
+            "Maximum (ng/g ww)" = max(Metals),
+            "Mean (ng/g ww)" = mean(Metals),
+            "CV (%)" = (sd(Metals)/mean(Metals))*100)),
+
+(subset_data %>% 
+  group_by(Collection.Location) %>%
+  summarise("Minimum (ng/g ww)" = min(OPE),
+            "Median (ng/g ww)" = median(OPE),
+            "Maximum (ng/g ww)" = max(OPE),
+            "Mean (ng/g ww)" = mean(OPE),
+            "CV (%)" = (sd(OPE)/mean(OPE))*100)),          
+
+(subset_data %>% 
+  group_by(Collection.Location) %>%
+  summarise("Minimum (ng/g ww)" = min(PBDE),
+            "Median (ng/g ww)" = median(PBDE),
+            "Maximum (ng/g ww)" = max(PBDE),
+            "Mean (ng/g ww)" = mean(PBDE),
+            "CV (%)" = (sd(PBDE)/mean(PBDE))*100)),
+
+(subset_data %>% 
+  group_by(Collection.Location) %>%
+  summarise("Minimum (ng/g ww)" = min(PFAS),
+            "Median (ng/g ww)" = median(PFAS),
+            "Maximum (ng/g ww)" = max(PFAS),
+            "Mean (ng/g ww)" = mean(PFAS),
+            "CV (%)" = (sd(PFAS)/mean(PFAS))*100)))
+
+location_stats <- add_column(location_stats,
+                             Contaminant = c("Metals", "Metals",
+                                             "OPE", "OPE",
+                                             "PBDE", "PBDE",
+                                             "PFAS", "PFAS"),
+                             .before = 1)
+
 
 
 # calculating the minimum, maximum, median, mean, and CVs for each
 # contaminant, grouped by bird sex
 
-Sex_stats <- subset_data %>% 
+sex_stats <- rbind((subset_data %>% 
+                      group_by(Sex) %>%
+  summarise("Minimum (ng/g ww)" = min(Metals),
+            "Median (ng/g ww)" = median(Metals),
+            "Maximum (ng/g ww)" = max(Metals),
+            "Mean (ng/g ww)" = mean(Metals),
+            "CV (%)" = (sd(Metals)/mean(Metals))*100)),
+
+(subset_data %>% 
   group_by(Sex) %>%
-  summarise(Metals_min = min(Metals),
-            Metals_median = median(Metals),
-            Metals_max = max(Metals),
-            Metals_mean = mean(Metals),
-            Metals_cv = (sd(Metals)/mean(Metals))*100,
-            OPE_min = min(OPE),
-            OPE_median = median(OPE),
-            OPE_max = max(OPE),
-            OPE_mean = mean(OPE),
-            OPE_CV = (sd(OPE)/mean(OPE))*100,
-            PBDE_min = min(PBDE),
-            PBDE_median = median(PBDE),
-            PBDE_max = max(PBDE),
-            PBDE_mean = mean(PBDE),
-            PBDE_CV = (sd(PBDE)/mean(PBDE))*100,
-            PFAS_min = min(PFAS),
-            PFAS_median = median(PFAS),
-            PFAS_max = max(PFAS),
-            PFAS_mean = mean(PFAS),
-            PFAS_CV = (sd(PFAS)/mean(PFAS))*100)
+  summarise("Minimum (ng/g ww)" = min(OPE),
+            "Median (ng/g ww)" = median(OPE),
+            "Maximum (ng/g ww)" = max(OPE),
+            "Mean (ng/g ww)" = mean(OPE),
+            "CV (%)" = (sd(OPE)/mean(OPE))*100)),           
+
+(subset_data %>% 
+  group_by(Sex) %>%
+  summarise("Minimum (ng/g ww)" = min(PBDE),
+            "Median (ng/g ww)" = median(PBDE),
+            "Maximum (ng/g ww)" = max(PBDE),
+            "Mean (ng/g ww)" = mean(PBDE),
+            "CV (%)" = (sd(PBDE)/mean(PBDE))*100)),
+
+(subset_data %>% 
+  group_by(Sex) %>%
+  summarise("Minimum (ng/g ww)" = min(PFAS),
+            "Median (ng/g ww)" = median(PFAS),
+            "Maximum (ng/g ww)" = max(PFAS),
+            "Mean (ng/g ww)" = mean(PFAS),
+            "CV (%)" = (sd(PFAS)/mean(PFAS))*100)))
+
+sex_stats <- add_column(sex_stats,
+                        Contaminant = c("Metals", "Metals",
+                                        "OPE", "OPE",
+                                        "PBDE", "PBDE",
+                                        "PFAS", "PFAS"),
+                        .before = 1)
 
 
 # ks-test tissue -------------------------------------------------------------
@@ -507,7 +584,7 @@ colnames(ks_tissue_matrix) <- c("blood",
                                 "fat",
                                 "liver",
                                 "muscle",
-                                "preen_oil")
+                                "preen oil")
 
 rownames(ks_tissue_matrix) <- c("blood",
                                 "brain",
@@ -515,7 +592,7 @@ rownames(ks_tissue_matrix) <- c("blood",
                                 "fat",
                                 "liver",
                                 "muscle",
-                                "preen_oil")
+                                "preen oil")
 
 
 # creating a function, ks_tissue, to run the ks-test comparing two samples
@@ -551,15 +628,18 @@ ks_tissue <- function(df){
   
 }
 
-# running the ks-tests for tissues for each contaminant
+tissue_KS <- as.data.frame(rbind(ks_tissue(long_df_metals),
+                   ks_tissue(long_df_OPE),
+                   ks_tissue(long_df_PBDE),
+                   ks_tissue(long_df_PFAS)))
 
-metals_ks_matrix <- ks_tissue(long_df_metals)
+tissue_KS <- add_column(tissue_KS,
+                           Contaminant = c(rep("Metals", 7),
+                                           rep("OPE", 7),
+                                           rep("PBDE", 7),
+                                           rep("PFAS", 7)),
+                           .before = 1)
 
-OPE_ks_matrix <- ks_tissue(long_df_OPE)
-
-PBDE_ks_matrix <- ks_tissue(long_df_PBDE)
-
-PFAS_ks_matrix <- ks_tissue(long_df_PFAS)
 
 
 # ks-test location --------------------------------------------------------
@@ -609,15 +689,24 @@ ks_location <- function(df){
   
 }
 
-# running the ks-tests for locations for each contaminant
 
-metals_ks_location <- ks_location(long_df_metals)
+location_KS <- as.data.frame(rbind(ks_location(long_df_metals),
+                                   ks_location(long_df_OPE),
+                                   ks_location(long_df_PBDE),
+                                   ks_location(long_df_PFAS)))
 
-OPE_ks_location <- ks_location(long_df_OPE)
 
-PBDE_ks_location <- ks_location(long_df_PBDE)
+location_KS <- add_column(location_KS,
+                         Contaminant = c("Metals", "Metals",
+                                         "OPE", "OPE",
+                                         "PBDE", "PBDE",
+                                         "PFAS", "PFAS"),
+                         .before = 1)
 
-PFAS_ks_location <- ks_location(long_df_PFAS)
+
+
+
+
 
 
 # ks-test species ---------------------------------------------------------
@@ -667,17 +756,18 @@ ks_species <- function(df){
   
 }
 
+species_KS <- as.data.frame(rbind(ks_species(long_df_metals),
+                                  ks_species(long_df_OPE),
+                                  ks_species(long_df_PBDE),
+                                  ks_species(long_df_PFAS)))
 
-# running the ks-tests for species for each contaminant
 
-metals_ks_species <- ks_species(long_df_metals)
-
-OPE_ks_species <- ks_species(long_df_OPE)
-
-PBDE_ks_species <- ks_species(long_df_PBDE)
-
-PFAS_ks_species <- ks_species(long_df_PFAS)
-
+species_KS <- add_column(species_KS,
+                            Contaminant = c("Metals", "Metals",
+                                            "OPE", "OPE",
+                                            "PBDE", "PBDE",
+                                            "PFAS", "PFAS"),
+                            .before = 1)
 
 # ks-test sex -------------------------------------------------------------
 
@@ -726,24 +816,31 @@ ks_sex <- function(df){
   
 }
 
-
-# running the ks-tests for sex for each contaminant
-
 metals_ks_sex <- ks_sex(long_df_metals)
-
 OPE_ks_sex <- ks_sex(long_df_OPE)
-
 PBDE_ks_sex <- ks_sex(long_df_PBDE)
-
 PFAS_ks_sex <- ks_sex(long_df_PFAS)
+
+
+
+sex_KS <- as.data.frame(rbind(metals_ks_sex,
+                              OPE_ks_sex,
+                              PBDE_ks_sex,
+                              PFAS_ks_sex))
+
+
+sex_KS <- add_column(sex_KS,
+                          Contaminant = c("Metals", "Metals",
+                                          "OPE", "OPE",
+                                          "PBDE", "PBDE",
+                                          "PFAS", "PFAS"),
+                          .before = 1)
 
 
 # Heat Maps ---------------------------------------------------------------
 
 
 library(pheatmap)
-
-
 
 tissue_nondetect <- c((14/14)*100,(31/31)*100,(0/11)*100,(6/6)*100,(10/31)*100,(27/27)*100,(10/10)*100,
                       (14/14)*100,(22/31)*100,(11/11)*100,(0/6)*100,(31/31)*100,(16/27)*100,(10/10)*100,
@@ -764,11 +861,12 @@ tissue_nondetect_matrix <- matrix(data = tissue_nondetect,
 pheatmap(tissue_nondetect_matrix,
          display_numbers = T,
          color = colorRampPalette(c('white','red'))(100),
+         breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
          fontsize_number = 15,
          number_color = "black",
-         number_format = "%i",
+         number_format = "%g",
          fontsize = 15,
          angle_col = 0,
          annotation_legend = TRUE)
@@ -794,16 +892,13 @@ species_nondetect_matrix <- matrix(data = species_nondetect,
                                   dimnames = list(row_names_heat, species_colnames))
 
 
-myColour <- colorRampPalette(c("white", "red"))(100)
-
-myBreaks <- c(seq(min(species_nondetect_matrix), 0, length.out=ceiling(100/2) + 1), 
-              seq(max(species_nondetect_matrix)/100, max(species_nondetect_matrix), length.out=floor(100/2)))
+colour_gradient <- colorRampPalette(c("white", "red"))(100)
 
 
 pheatmap(species_nondetect_matrix,
          display_numbers = T,
-         color = myColour,
-         breaks = myBreaks,
+         color = colour_gradient,
+         breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
          fontsize_number = 15,
@@ -832,21 +927,17 @@ location_nondetect_matrix <- matrix(data = location_nondetect,
                                    dimnames = list(row_names_heat, location_colnames))
 
 
-myColour <- colorRampPalette(c("white", "red"))(100)
-
-myBreaks <- c(seq(min(location_nondetect_matrix), 0, length.out=ceiling(100/2) + 1), 
-              seq(max(location_nondetect_matrix)/100, max(location_nondetect_matrix), length.out=floor(100/2)))
-
+colour_gradient <- colorRampPalette(c("white", "red"))(100)
 
 pheatmap(location_nondetect_matrix,
          display_numbers = T,
-         color = myColour,
-         breaks = myBreaks,
+         color = colour_gradient,
+         breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
          fontsize_number = 15,
          number_color = "black",
-         number_format = "%i",
+         number_format = "%g",
          fontsize = 15,
          angle_col = 0,
          annotation_legend = TRUE)
@@ -863,27 +954,24 @@ pheatmap(location_nondetect_matrix,
 
 sex_nondetect <- c(72,77,
                    100,71,
-                        92,63,
-                        89,94)
+                   92,63,
+                   89,94)
 
 sex_colnames <- c("Male", "Female")
 
 sex_nondetect_matrix <- matrix(data = sex_nondetect,
                                     nrow = 4,
                                     byrow = TRUE,
-                                    dimnames = list(row_names_heat, sex_colnames))
+                                    dimnames = list(row_names_heat,
+                                                    sex_colnames))
 
 
-myColour <- colorRampPalette(c("white", "red"))(100)
-
-myBreaks <- c(seq(min(sex_nondetect_matrix), 0, length.out=ceiling(100/2) + 1), 
-              seq(max(sex_nondetect_matrix)/100, max(sex_nondetect_matrix), length.out=floor(100/2)))
-
+colour_gradient <- colorRampPalette(c("white", "red"))(100)
 
 pheatmap(sex_nondetect_matrix,
          display_numbers = T,
-         color = myColour,
-         breaks = myBreaks,
+         color = colour_gradient,
+         breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
          fontsize_number = 15,
@@ -892,9 +980,4 @@ pheatmap(sex_nondetect_matrix,
          fontsize = 15,
          angle_col = 0,
          annotation_legend = TRUE)
-
-
-
-
-
 
