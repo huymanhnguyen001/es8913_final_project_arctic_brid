@@ -341,7 +341,7 @@ After summarizing each contaminant into appropriate groups/classes, many zero va
 <br>
 Contaminants are not detected equally; each compound has a different ionization potential in the mass spectrometer, and as such, a different level of sensitivity when quantifying. This means that each compound would have a unique LOD for the given detection method, which was not ideal since several unique contaminants were summarized in each group investigated. For this reason, the median LOD (0.03 ng/g ww) was taken, and half of this value (0.015 ng/g ww) was used as a general replacement for non-detects in all contaminant groups. In order to avoid ties in the samples, the `runif` function was used, where for each zero value, a random number between the range of 0.0145000 and 0.0155000 (~ 3% variation around 0.015) was selected and used to replace the zero. The addition of the extra zeros after the value (ie. 0.0145000 instead of 0.0145) were used to expand the possible values that could be selected by runif to significantly reduce the possibility that ties would still occur by random chance. Finally, each contaminant sample was checked for ties after the replacements had been performed using the `duplicated` function to ensure no ties remained.
 <br>
-```{r echo = FALSE, cache = TRUE}
+```{r, echo = FALSE}
 
 # Replacing zeros in the Metals group (Example)
 
@@ -364,7 +364,7 @@ subset_data$PBDE[subset_data$PBDE == 0]<-runif(sum(subset_data$PBDE == 0),
 
 ```
 
-```{r, cache = TRUE}
+```{r}
 
 
 # Replacing zeros in the PFAS group (example)
@@ -385,8 +385,7 @@ sum(duplicated(subset_data$PFAS))
 
 #### Contaminant Subsetting
 <br>
-Once this new data frame was created, and all non-detect values were appropriately replaced, it was converted into either a long data format (see example below) for creating visualizations such as box plots and scatter plots or wide data formats for statistical analysis????????????????
-
+Once this new data frame was created, and all non-detect values were appropriately replaced, it was converted into either a long data format (see example below) for creating visualizations such as box plots and scatter plots or wide data formats for statistical analysis.
 <br>
 ```{r, cache = TRUE}
 # pivoting the data long by contaminant type
@@ -440,6 +439,7 @@ Kolmogorov-Smirnov (KS) tests were performed on each level of each grouping vari
 KS-tests were performed using the `ks.test` function from the `stats` package, with a custom function for each grouping variable (`ks_tissue`, `ks_species`, `ks_location`, and `ks_sex`) created to run the tests. These functions iterated through each sample subset for each grouping variable, for a given contaminant, and compared every distribution, storing the p-value of the KS-test in an appropriately labeled matrix. The matrix of all the p-values was then returned, and those values lower than the chosen significance level (0.05) were reported as a statistically significant difference between the two sample distributions being compared.
 <br>
 ```{r, warning = FALSE, message = FALSE, cache = TRUE}
+
 # Creating an empty matrix to store the ks-test p-values for location variables
 
 ks_location_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
@@ -449,6 +449,9 @@ colnames(ks_location_matrix) <- c("Labrador Sea",
 
 rownames(ks_location_matrix) <- c("Labrador Sea",
                                   "Prince Leopold Island, NU")
+
+# creating a function, ks_location, to run the ks-test comparing two samples
+# (grouped by location), and store the p-value in the ks_location_matrix
 
 # function takes one of the long contaminant data frames as an argument (df)
 
@@ -482,6 +485,7 @@ ks_location <- function(df){
 # running the ks-tests for locations for metals
 
 metals_ks_location <- ks_location(long_df_metals)
+metals_ks_location
 ```
 <br>
 <br>
@@ -510,13 +514,13 @@ Scatter plots were used as an attempt at manual clustering as replacement for tr
 
 #### PCA
 <br>
-PCA was performed on the total observations for the four contaminant groups (metals, OPEs, PBDEs, PFAS), with two principal components being selected in the function call for the purposes of potential remapping/visualization of the original data in the principal component space. The scree plot showed that the first two principal components (dimensions) only accounted for 54.4% of the total variance in the data, and as such, further analysis using the PCA method was not performed (Figure 1).
+PCA was performed on the total observations for the four contaminant groups (metals, OPEs, PBDEs, PFAS), using the data from the `data` matrix without zeros replaced, as ties would not have affected the PCA results. Two principal components were selected in the function call for the purposes of potential remapping/visualization of the original data in the principal component space. The scree plot showed that the first two principal components (dimensions) only accounted for 54.4% of the total variance in the data, and as such, further analysis using the PCA method was not performed (Figure 1).
 <br>
 ```{r, echo = FALSE, fig.cap = "Figure 1: The Scree plot for the PCA summarizing how much of the total variation each principal component (dimension) accounts for. The first two principal components account for only 54.4% of the total variation, which was not appropriate for accurately summarizing the data set."}
 
 # Performing PCA on the four contaminant groups
 
-contaminant_PCA <- PCA(subset_data[c(5:8)],
+contaminant_PCA <- PCA(data[c(871,876:878)],
                        scale.unit = TRUE,
                        ncp = 2,
                        graph = FALSE)
@@ -533,23 +537,23 @@ fviz_eig(contaminant_PCA,
 
 #### K-Means Clustering
 <br>
-K-means clustering was also performed on the scaled data of the total observations for the four contaminant groups. Plotting the within-cluster sum of squares versus the number of cluster showed that the optimal number of clusters was five, as identified using the ‘elbow method’ (Figure 2).
+K-means clustering was also performed on the scaled data of the total observations for the four contaminant groups, using the origninal `data` matrix without zero values replaced, as ties would not have influenced the results. Plotting the within-cluster sum of squares versus the number of cluster showed that the optimal number of clusters was five, as identified using the ‘elbow method’ (Figure 2).
 <br>
 ```{r, echo = FALSE, fig.cap = "Figure 2: Plot of the within cluster sum of squares (error) for one to ten clusters used by the k-means algorithm. While the error decreases with an increase in the number of clusters, the point at which the error minimization slowed/plateaued (the elbow) was at five clusters."}
 
 # Elbow method for determining number of clusters
 
-fviz_nbclust(scale(subset_data[5:8]), kmeans, method = "wss")
+fviz_nbclust(scale(data[c(871,876:878)]), kmeans, method = "wss")
 
 ```
 <br>
-Five was then used as the input for the `centers` argument in the `kmeans` function, with the clustering being subsequently visualized (Figure 3). The number of observations in clusters 1 to 5 (4, 101, 1, 21, and 3, respectively) were very disproportionate, revealing no clear trends between the clusters and grouping variables in the data.
+Five was then used as the input for the `centers` argument in the `kmeans` function, with the clustering being subsequently visualized (Figure 3). The number of observations in clusters 1 to 5 (21, 1, 3, 101, and 4, respectively) were very disproportionate, revealing no clear trends between the clusters and grouping variables in the data.
 <br>
-```{r, echo = FALSE, fig.cap = "Figure 3: Visualization of the clustered data in the two dimensional k-means space. The cluster sizes (4, 101, 1, 21, 3 for clusters 1 to 5, respectively) were very disproportionate, having no apparent relationship to the grouping variables."}
+```{r, echo = FALSE, fig.cap = "Figure 3: Visualization of the clustered data in the two dimensional k-means space. The cluster sizes (21, 1, 3, 101, 4 for clusters 1 to 5, respectively) were very disproportionate, having no apparent relationship to the grouping variables."}
 
 # K-means clustering on the total contaminant levels (PDBE, metals, PFAS, OPEs)
 
-kmeans_contaminants <- kmeans(x = scale(subset_data[5:8]),
+kmeans_contaminants <- kmeans(x = scale(data[c(871,876:878)]),
                       centers = 5,
                       iter.max = 100,
                       nstart = 25,
@@ -560,7 +564,7 @@ kmeans_contaminants <- kmeans(x = scale(subset_data[5:8]),
 
 fviz_cluster(kmeans_contaminants,
              geom = "point",
-             data = scale(subset_data[5:8])) + 
+             data = scale(data[c(871,876:878)])) + 
   labs(title = "K-means Cluster Plot",
        fill = "Cluster",
        shape = "Cluster",
@@ -1091,7 +1095,7 @@ Plastic pollution and associated contaminants are a growing threat globally, so 
 <br>
 ```{r, echo = FALSE}
 
-kable_cor <- knitr::kable(cor(subset_data[5:8],method = "spearman"),
+kable_cor <- knitr::kable(cor(data[c(871,876:878)],method = "spearman"),
              digits = 4,
              align = "c",
              caption = "Table S1: Correlation Matrix for the Four Contaminant Groups")
@@ -1129,6 +1133,7 @@ rownames(ks_tissue_matrix) <- c("blood",
                                 "liver",
                                 "muscle",
                                 "preen_oil")
+
 
 # creating a function, ks_tissue, to run the ks-test comparing two samples
 # (grouped by tissue type), and store the p-value in the ks_tissue_matrix
@@ -1188,7 +1193,6 @@ kable_ks_tissue <- row_spec(kable_ks_tissue, c(8:14, 22:28), background = "#D3D3
 kable_ks_tissue <- kable_classic_2(kable_ks_tissue, full_width = F, html_font = "calibri")
 
 kable_ks_tissue
-
 
 ```
 <br>
@@ -1394,7 +1398,6 @@ ks_sex <- function(df){
   
 }
 
-
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE}
@@ -1409,6 +1412,7 @@ sex_KS <- as.data.frame(rbind(metals_ks_sex,
                               PBDE_ks_sex,
                               PFAS_ks_sex))
 
+
 sex_KS <- add_column(sex_KS,
                           Contaminant = c("Metals", "Metals",
                                           "OPE", "OPE",
@@ -1417,7 +1421,7 @@ sex_KS <- add_column(sex_KS,
                           .before = 1)
 
 kable_ks_sex <- knitr::kable(sex_KS,
-             #digits = 4,
+             digits = 4,
              align = "c",
              caption = "Table SX: KS-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
