@@ -876,14 +876,14 @@ mw_tissue <- function(df){
       subset_df1 <- filter(df, Tissue == i)
       subset_df2 <- filter(df, Tissue == j)
       
-      # runs the ks-test for the contaminant levels in the two tissue types
+      # runs the mw-test for the contaminant levels in the two tissue types
       
       mw_tissue_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                            y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_tissue_matrix)
   
@@ -927,14 +927,14 @@ mw_species <- function(df){
       subset_df1 <- filter(df, species == i)
       subset_df2 <- filter(df, species == j)
       
-      # runs the ks-test for the contaminant levels in the two species 
+      # runs the mw-test for the contaminant levels in the two species 
       
       mw_species_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                             y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_species_matrix)
   
@@ -966,8 +966,8 @@ rownames(mw_sex_matrix) <- c("Male",
                              "Female")
 
 
-# creating a function, ks_sex, to run the ks-test comparing two samples
-# (grouped by sex), and store the p-value in the ks_sex_matrix
+# creating a function, mw_sex, to run the mw-test comparing two samples
+# (grouped by sex), and store the p-value in the mw_sex_matrix
 
 # function takes one of the long contaminant data frames as an argument (df)
 
@@ -986,14 +986,14 @@ mw_sex <- function(df){
       subset_df1 <- filter(df, Sex == i)
       subset_df2 <- filter(df, Sex == j)
       
-      # runs the ks-test for the contaminant levels in the two sexes 
+      # runs the mw-test for the contaminant levels in the two sexes 
       
       mw_sex_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                     y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_sex_matrix)
   
@@ -1019,7 +1019,7 @@ sex_MW <- add_column(sex_MW,
                      .before = 1)
 
 # MW Location-------------------------------------------------------
-# Creating an empty matrix to store the ks-test p-values for location variables
+# Creating an empty matrix to store the mw-test p-values for location variables
 
 mw_location_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
 
@@ -1044,14 +1044,14 @@ mw_location <- function(df){
       subset_df1 <- filter(df, Collection.Location == i)
       subset_df2 <- filter(df, Collection.Location == j)
       
-      # runs the ks-test for the contaminant levels in the two locations 
+      # runs the mw-test for the contaminant levels in the two locations 
       
       mw_location_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                          y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_location_matrix)
   
@@ -1073,24 +1073,41 @@ location_MW <- add_column(location_MW,
 
 # Heat Maps ---------------------------------------------------------------
 
-
 library(pheatmap)
 
-tissue_nondetect <- c((14/14)*100,(31/31)*100,(0/11)*100,(6/6)*100,(10/31)*100,(27/27)*100,(10/10)*100,
-                      (14/14)*100,(22/31)*100,(11/11)*100,(0/6)*100,(31/31)*100,(16/27)*100,(10/10)*100,
-                      (14/14)*100,(29/31)*100,(0/11)*100,(0/6)*100,(20/31)*100,(18/27)*100,(10/10)*100,
-                      (14/14)*100,(31/31)*100,(11/11)*100,(6/6)*100,(21/31)*100,(27/27)*100,(10/10)*100)
+# Tissue Heat Maps
 
-tissue_col_name <- c("Blood", "Brain", "Egg", "Fat", "Liver", "Muscle", "Preen Oil")
+# Vector containing the percentage of non-detect values for tissues
+
+tissue_nondetect <- c(100,100,0,100,32,100,100,
+                      100,71,100,0,100,59,100,
+                      100,94,0,0,65,67,100,
+                      100,100,100,100,68,100,100)
+
+# Appropriate column names for each tissue
+
+tissue_col_name <- c("Blood",
+                     "Brain",
+                     "Egg",
+                     "Fat",
+                     "Liver",
+                     "Muscle",
+                     "Preen Oil")
+
+# Row names to be used for all heat maps
+
 row_names_heat <- c("Metals", "OPEs", "PBDEs", "PFAS")
 
-
+# adding the tissue vector, row and column names into a matrix for the heat map
 
 tissue_nondetect_matrix <- matrix(data = tissue_nondetect,
                                   nrow = 4,
                                   byrow = TRUE,
-                                  dimnames = list(row_names_heat, tissue_col_name))
+                                  dimnames = list(row_names_heat,
+                                                  tissue_col_name))
 
+# using the pheatmap function to generate a heat map from the matrix
+  # colour gradient ranging from 0 (white) to 100 (red)
 
 pheatmap(tissue_nondetect_matrix,
          display_numbers = T,
@@ -1105,25 +1122,33 @@ pheatmap(tissue_nondetect_matrix,
          angle_col = 0,
          annotation_legend = TRUE)
 
+
+# Species heat maps
+
+# Vector containing the percentage of non-detect values for species
+
 species_nondetect <- c(82,64,
                        67,100,
                        69,74,
                        88,100)
 
+# Appropriate column names for each species
+
 species_colnames <- c("Northern Fulmar", "Black-Legged Kittiwake")
+
+# adding the species vector, row and column names into a matrix for the heat map
 
 species_nondetect_matrix <- matrix(data = species_nondetect,
                                   nrow = 4,
                                   byrow = TRUE,
                                   dimnames = list(row_names_heat, species_colnames))
 
-
-colour_gradient <- colorRampPalette(c("white", "red"))(100)
-
+# using the pheatmap function to generate a heat map from the matrix
+# colour gradient ranging from 0 (white) to 100 (red)
 
 pheatmap(species_nondetect_matrix,
          display_numbers = T,
-         color = colour_gradient,
+         color = colorRampPalette(c('white','red'))(100),
          breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
@@ -1134,24 +1159,33 @@ pheatmap(species_nondetect_matrix,
          angle_col = 0,
          annotation_legend = TRUE)
 
+
+# Location heat maps
+
+# Vector containing the percentage of non-detect values for locations
+
 location_nondetect <- c(100,64,
                         48,94,
                        74,69,
                        86,95)
 
+# Appropriate column names for each location
+
 location_colnames <- c("Labrador Sea", "Prince Leopold Island")
+
+# adding the location vector, row and column names into a matrix for the heat map
 
 location_nondetect_matrix <- matrix(data = location_nondetect,
                                    nrow = 4,
                                    byrow = TRUE,
                                    dimnames = list(row_names_heat, location_colnames))
 
-
-colour_gradient <- colorRampPalette(c("white", "red"))(100)
+# using the pheatmap function to generate a heat map from the matrix
+# colour gradient ranging from 0 (white) to 100 (red)
 
 pheatmap(location_nondetect_matrix,
          display_numbers = T,
-         color = colour_gradient,
+         color = colorRampPalette(c('white','red'))(100),
          breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
@@ -1162,12 +1196,21 @@ pheatmap(location_nondetect_matrix,
          angle_col = 0,
          annotation_legend = TRUE)
 
+
+# Sex heat maps
+
+# Vector containing the percentage of non-detect values for sexes
+
 sex_nondetect <- c(72,77,
                    100,71,
                    92,63,
                    89,94)
 
+# Appropriate column names for each sex
+
 sex_colnames <- c("Male", "Female")
+
+# adding the sex vector, row and column names into a matrix for the heat map
 
 sex_nondetect_matrix <- matrix(data = sex_nondetect,
                                     nrow = 4,
@@ -1175,12 +1218,12 @@ sex_nondetect_matrix <- matrix(data = sex_nondetect,
                                     dimnames = list(row_names_heat,
                                                     sex_colnames))
 
-
-colour_gradient <- colorRampPalette(c("white", "red"))(100)
+# using the pheatmap function to generate a heat map from the matrix
+# colour gradient ranging from 0 (white) to 100 (red)
 
 pheatmap(sex_nondetect_matrix,
          display_numbers = T,
-         color = colour_gradient,
+         color = colorRampPalette(c('white','red'))(100),
          breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
@@ -1190,6 +1233,8 @@ pheatmap(sex_nondetect_matrix,
          fontsize = 15,
          angle_col = 0,
          annotation_legend = TRUE)
+
+
 
 # Box plots Tissue with non-detects -------------------------------------------------
 tissue_boxplot <- ggplot(data = long_df, 

@@ -1,7 +1,7 @@
 ---
 title: "Analysis of Plastic-Associated Contaminants in Northern Fulmars (Fulmarus glacialis) and Black-Legged Kittiwakes (Rissa tridactyla)"
 author: "Eric Fries, Huy Nguyen"
-date: "22/04/2022"
+date: "25/04/2022"
 output: html_document
 ---
 
@@ -20,23 +20,37 @@ set.seed(12345)
 
 ## Abbreviations
 <br>
-BLKI - Black-Legged Kittiwake
+**BLKI** - Black-Legged Kittiwake
 <br>
-CV - Coefficient of Variation
+**CDF** - Cumulative Distribution Function
 <br>
-KS-test - Kolmogorov-Smirnov Test
+**CV** - Coefficient of Variation
 <br>
-LOD - Limit of Detection
+**IQR** - Interquartile Range
 <br>
-NOFU - Northern Fulmar
+**KS-test** - Kolmogorov-Smirnov Test
 <br>
-OPE - Organophosphate Ester
+**LOD** - Limit of Detection
 <br>
-PBDE - Polybrominated Diphenyl Ether
+**MW-Test** - Mann-Whitney U-Test
 <br>
-PFAS - Per- and Polyfluoroalkyl Substances
+**ng/g ww** - Nanograms per Gram of Wet Weight
 <br>
-
+**NOFU** - Northern Fulmar
+<br>
+**OPE** - Organophosphate Ester
+<br>
+**PBDE** - Polybrominated Diphenyl Ether
+<br>
+**PC** - Principal Component
+<br>
+**PCA** - Principal Component Analysis
+<br>
+**PFAS** - Per- and Polyfluoroalkyl Substances
+<br>
+**UPLC-MS/MS** - Ultra High Performance Liquid Chromatography with Tandem Mass Spectrometry
+<br>
+<br>
 
 ## Introduction
 <br>
@@ -46,7 +60,7 @@ As the role of plastics in our daily lives has grown, so too has the levels of p
 Since most plastic additives are not covalently linked to the polymer they are used in, they can migrate to the plastic surface and leach rapidly into the surrounding waters or an organism which has ingested the plastic.^4,8-9^ Leaching can be accelerated as a plastic degrades in the aquatic environment, first through abiotic means such as thermal, hydrolytic, and photo-degradation, and eventually followed by biotic degradation once ingested.^10^ Many plastic additives such as phthalates, organophosphate esters (OPEs), and per- and polyfluoroalkyl substances (PFAS) can pose a significant ecotoxicological risk once leached, with several studies have shown adverse effects such as endocrine disruption, alterations to gene expression and reproduction, and increases in mortality in a variety of organisms.^3-4,7,9,11-13^
 <br>
 <br>
-The problem of plastic pollution is not restricted to areas of high populace or waste output either, as microplastic particles and associated contaminants have been recently found at increasing levels in the Arctic biotic and abiotic environment.^14-18^ The risks of plastic pollution pose on Arctic marine mammals, fish and birds include physical damage from macroplastic, such as internal abrasions, blockages of gastrointestinal tract, as well as toxic effects from plastic with sorbed plastic additives contaminants.^19-23^ Quantification of plastic ingestion in several seabird species in the Canadian Arctic biota have been reported, including Northern Fulmar (Fulmarus glacialis) and Black-legged kittiwake (Rissa tridactyla).^19-20,24^ These two species were found to have a higher frequency of plastic ingestion than others, such as guillemots and murres.^25^ Long-term monitoring of these two species has revealed that both species can accumulate contaminants, such as toxic metals (mercury) and plastic additives (PBDEs).^26-27^ This accumulation has been reported to be tissue-specific, breeding location-specific, and species foraging-specific.^28-29^ However, the occurrence and potential effects of plastic additives in Arctic seabirds are still poorly understood. While some studies have investigated the presence of additives in these birds, they are limited and only focus on a single type of contaminant or tissue group at a time.^30-32^ Given the urgency to understand the correlation between plastics and the fate of associated contaminants in Arctic seabirds, our study explores the exposure of PFAS, PBDE, OPE and trace metals in a range of tissue types and eggs from Northern Fulmar (Fulmarus glacialis) and Black-legged kittiwakes (Rissa tridactyla) from two Canadian Arctic sites: the Labrador Sea and Prince Leopold Island, Nunavut.
+The problem of plastic pollution is not restricted to areas of high populace or waste output either, as microplastic particles and associated contaminants have been recently found at increasing levels in the Arctic biotic and abiotic environment.^14-18^ The risks of plastic pollution pose on Arctic marine mammals, fish and birds include physical damage from macroplastic, such as internal abrasions, blockages of gastrointestinal tract, as well as toxic effects from plastic with sorbed plastic additives contaminants.^19-23^ Quantification of plastic ingestion in several seabird species in the Canadian Arctic biota have been reported, including Northern Fulmar (*Fulmarus glacialis*) and Black-Legged Kittiwake (*Rissa tridactyla*).^19-20,24^ These two species were found to have a higher frequency of plastic ingestion than others, such as guillemots and murres.^25^ Long-term monitoring of these two species has revealed that both species can accumulate contaminants, such as toxic metals (mercury) and plastic additives (PBDEs).^26-27^ This accumulation has been reported to be tissue-specific, breeding location-specific, and species foraging-specific.^28-29^ However, the occurrence and potential effects of plastic additives in Arctic seabirds are still poorly understood. While some studies have investigated the presence of additives in these birds, they are limited and only focus on a single type of contaminant or tissue group at a time.^30-32^ Given the urgency to understand the correlation between plastics and the fate of associated contaminants in Arctic seabirds, our study explores the exposure of PFAS, PBDE, OPE and trace metals in a range of tissue types and eggs from Northern Fulmar and Black-Legged Kittiwakes from two Canadian Arctic sites: the Labrador Sea and Prince Leopold Island, Nunavut.
 <br>
 <br>
 
@@ -62,7 +76,7 @@ A total of 31 arctic seabirds were analyzed in this study, 20 of which were Nort
 
 #### Contaminant Summarization and Selection
 <br>
-Firstly, all appropriate packages for the entire document and analysis were loaded in. Then, we group single contaminants into groups of contaminants by using pipes, denoted by `%>%`, to apply the `sum()` function for each row (each of 130 observations) across columns of contaminants that belong to the same group of contaminants. For example, DMP, DEP, DBP, BBP DEHP and DNOP are all phthalates. As a result, we calculated the sum of all these contaminants for each row and assign the total sum value for each row to the column `Total_Ph` (see example below). In addition, when applying the `sum()` function, we also set `na.rm = TRUE` to remove all the NA values.
+All data manipulations and analysis were performed in R and R Sutido. Firstly, all appropriate packages for the entire document and analysis were loaded in. Then, we group single contaminants into groups of contaminants by using pipes, denoted by `%>%`, to apply the `sum()` function for each row (each of 130 observations) across columns of contaminants that belong to the same group of contaminants. For example, DMP, DEP, DBP, BBP DEHP and DNOP are all phthalates. As a result, we calculated the sum of all these contaminants for each row and assign the total sum value for each row to the column `Total_Ph` (see example below). In addition, when applying the `sum()` function, we also set `na.rm = TRUE` to remove all the NA values.
 <br>
 ```{r, warning = FALSE, message = FALSE, cache = TRUE}
 
@@ -430,7 +444,7 @@ head(long_df_metals)
 Two data clustering approaches (principal component analysis (PCA) and k-means clustering) were initially investigated. PCA was performed on the total observations for the four contaminant groups (metals, OPEs, PBDEs, PFAS) with the goal of identifying whether the data clustered into groups indicative of different grouping variables (such as tissues, species, etc.). The `FactoMineR` and `factoextra` packages were used to perform the PCA.^37-38^ The `PCA` function of `FactoMineR` was used to perform the PCA, with the `fviz_eig` function used to visualize the scree plot for the PCA. The original, un-scaled data was used in the PCA function call, with the `scale.unit = TRUE` argument to automatically scale the data in the function.
 <br>
 <br>
-K-mean clustering was additionally used to attempt to identify clusters of the data that would be indicative of the different grouping variables. Like the PCA, k-mean clustering was performed on the total observations for the four contaminant groups. The data was first scaled using the `scale` function of base R. The `fviz_nbclust` function of the `factoextra` package was then used to determine the suitable number of clusters for the data, using the ‘elbow method’. The optimal number of clusters was then used as part of the input for the `kmeans` function from the base stats package, along with the scaled data. Finally, the results of the k-means clustering were visualized using the `fviz_cluster` function of the `factoextra` package.
+K-means clustering was additionally used to attempt to identify clusters of the data that would be indicative of the different grouping variables. Like the PCA, k-means clustering was performed on the total observations for the four contaminant groups. The data was first scaled using the `scale` function of base R. The `fviz_nbclust` function of the `factoextra` package was then used to determine the suitable number of clusters for the data, using the ‘elbow method’. The optimal number of clusters was then used as part of the input for the `kmeans` function from the base stats package, along with the scaled data. Finally, the results of the k-means clustering were visualized using the `fviz_cluster` function of the `factoextra` package.
 <br>
 <br>
 
@@ -501,13 +515,13 @@ metals_ks_location
 
 #### Mann-Whitney U-Tests
 <br>
-The Mann-Whitney U-test is another type of non-parametric test used to compare the contaminant levels across our grouping variables (tissue/sex/species/location). The Mann-Whitney U-test functions as a non-parametric extension of t-test.^35^ However, instead of comparing the medians/means between samples, it compares the rank sum between samples. The test first assigns numeric ranks for values in the samples, beginning with 1 for the smallest value. The individual numeric ranks are then summed up to obtain the test statistic, U, which reflects the total rank of each sample. In comparison between two samples, the smaller test statistic, U, is used to evaluate the null hypothesis. If U~calc~ is smaller than U~crit~ then the null hypothesis that the samples come from the same distribution is rejected. The test assumptions of Mann-Whitney U-test is similar to KS-test and as a result, the replacement of non-detect values was also applied on data prior to Mann-Whitney U-test.
+The Mann-Whitney U-test is another type of non-parametric test used to compare the contaminant levels across our grouping variables (tissue/sex/species/location). The Mann-Whitney U-test functions as a non-parametric extension of t-test.^35^ However, instead of comparing the medians/means between samples, it compares the rank sum between samples. The test first assigns numeric ranks for values in the samples, beginning with 1 for the smallest value. The individual numeric ranks are then summed up to obtain the test statistic, U, which reflects the total rank of each sample. In comparison between two samples, the smaller test statistic, U, is used to evaluate the null hypothesis. If U~calc~ is smaller than U~crit~ then the null hypothesis that the samples come from the same distribution is rejected. The test assumptions of Mann-Whitney U-test is similar to KS-test and as a result, the replacement of non-detect values was also applied on data prior to Mann-Whitney U-test. All Mann-Whitney U-tests were performed with the `wilcox.test` function from the `stats` package, using custom functions (`mw_tissue`, `mw_species`, `mw_location`, and `mw_sex`) designed similarly to those described in the previous section on KS-tests.
 <br>
 <br>
 
-#### Visualizations (Heat Maps, Boxplots, Scatterplots)
+#### Visualizations (Heat Maps, Box plots, Scatterplots)
 <br>
-Heat maps were created to summarize the levels of non-detect (zero) values for each sample of each subset of the data, using the `pheatmap` package.^40^ For each sample in each subset of the data, the number of zeros was counted using XX and divided by the total number of observations for that sample. These were then organized into a matrix with the subset variable (ex. tissue type) making the columns, and the contaminant making the rows, which were then turned into a heat map using the `pheatmap` function. A colour gradient between white and red was specified, with custom breaks ranging between 0 and 100 additionally specified to ensure the gradient was consistent across all heat maps.
+Heat maps were created to summarize the levels of non-detect (zero) values for each sample of each subset of the data, using the `pheatmap` package.^40^ For each sample in each subset of the data, the number of zeros was counted and divided by the total number of observations for that sample. These were then organized into a matrix with the subset variable (ex. tissue type) making the columns, and the contaminant making the rows, which were then turned into a heat map using the `pheatmap` function. A colour gradient between white and red was specified, with custom breaks ranging between 0 and 100 additionally specified to ensure the gradient was consistent across all heat maps.
 <br>
 <br>
 Box plots were used to investigate the distribution, i.e. variability and dispersion, of contaminants across our grouping variables. The interquartile range of the box plot represents the middle 50% of a distribution, with the minimum and maximum lines of the box plots extending out 1.5 times the median on either end. The data points that lie outside the minimum and maximum bounds are considered outliers.Box plots were constructed for each contaminant sample within each of the grouping variable subsets, using the `ggplot2` package.^41^
@@ -590,10 +604,10 @@ A heat map was constructed to indicate the percentage of non-detect values for e
 <br>
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.cap = "Figure 4: Heat map displaying the percentage of non-detect (zero) values for each contaminant, measured in the seven tissue types. Non-detect percentages ranged completely from 0% to 100% in several different tissue and contaminant types."}
 
-tissue_nondetect <- c((14/14)*100,(31/31)*100,(0/11)*100,(6/6)*100,(10/31)*100,(27/27)*100,(10/10)*100,
-                      (14/14)*100,(22/31)*100,(11/11)*100,(0/6)*100,(31/31)*100,(16/27)*100,(10/10)*100,
-                      (14/14)*100,(29/31)*100,(0/11)*100,(0/6)*100,(20/31)*100,(18/27)*100,(10/10)*100,
-                      (14/14)*100,(31/31)*100,(11/11)*100,(6/6)*100,(21/31)*100,(27/27)*100,(10/10)*100)
+tissue_nondetect <- c(100,100,0,100,32,100,100,
+                      100,71,100,0,100,59,100,
+                      100,94,0,0,65,67,100,
+                      100,100,100,100,68,100,100)
 
 tissue_col_name <- c("Blood", "Brain", "Egg", "Fat", "Liver", "Muscle", "Preen Oil")
 row_names_heat <- c("Metals", "OPEs", "PBDEs", "PFAS")
@@ -619,16 +633,16 @@ pheatmap(tissue_nondetect_matrix,
 
 ```
 <br>
-The general statistical analysis results for the four contaminant groups were summarized in Table 1. The concentration of metals was highest in liver and egg tissue with maximum concentration of 37.1 ng/g ww and 7.62 ng/g ww, respectively. The CV of liver tissue was higher than egg tissues indicating that  concentration of metals varied more in liver samples as compared to egg samples. A statistically significant result for both the KS-tests and Mann-Whitney U-test (p < 0.05) comparing the metal contaminant distributions across tissue types indicated that the levels of metals in liver and egg tissues were significantly different from all other tissue types (Table SX).
+The general statistical analysis results for the four contaminant groups were summarized in Table 1. The concentration of metals was highest in liver and egg tissue with maximum concentration of 37.1 ng/g ww and 7.62 ng/g ww, respectively. The CV of liver tissue was higher than egg tissues indicating that  concentration of metals varied more in liver samples as compared to egg samples. A statistically significant result for both the KS-tests (Table S2) and Mann-Whitney U-test (p < 0.05) (Table S3) comparing the metal contaminant distributions across tissue types indicated that the levels of metals in liver and egg tissues were significantly different from all other tissue types.
 <br>
 <br>
-Secondly, for OPE contaminants, the concentration of OPE was highest in fat tissue as compared to other tissue types, with median and mean of 4.71 ng/g ww and 10.7 ng/g ww, respectively (Table 1). The CV in muscle tissue was higher than all other tissue types due to an outlier detected at 258 ng/g ww. The statistical result for both KS-tests and Mann-Whitney U-test (p < 0.05) showed that the level of OPE in fat tissue was different from other tissue types (Table SX).
+Secondly, for OPE contaminants, the concentration of OPE was highest in fat tissue as compared to other tissue types, with median and mean of 4.71 ng/g ww and 10.7 ng/g ww, respectively (Table 1). The CV in muscle tissue was higher than all other tissue types due to an outlier detected at 258 ng/g ww. The statistical result for both KS-tests (Table S2) and Mann-Whitney U-test (p < 0.05) (Table S3) showed that the level of OPE in fat tissue was different from other tissue types.
 <br>
 <br>
-Thirdly, for PBDEs, there were no detected values for brain and preen oil samples. The concentration of PBDE was highest in fat tissue, followed by egg tissues, with mean concentrations of 25.3 ng/g ww and 1.41 ng/g ww, respectively (Table 1). The CV in fat tissue was lowest (58.2%) as compared to all other tissue types.The KS-test and Mann-Whitney U-test both showed a significant difference (p < 0.05) between the distributions of PBDE in fat and egg tissues from all other tissue types (Table SX).
+Thirdly, for PBDEs, there were no detected values for brain and preen oil samples. The concentration of PBDE was highest in fat tissue, followed by egg tissues, with mean concentrations of 25.3 ng/g ww and 1.41 ng/g ww, respectively (Table 1). The CV in fat tissue was lowest (58.2%) as compared to all other tissue types.The KS-test (Table S2) and Mann-Whitney U-test (Table S3) both showed a significant difference (p < 0.05) between the distributions of PBDE in fat and egg tissues from all other tissue types.
 <br>
 <br>
-Finally, PFAS contaminants were only detected in liver tissue with mean and maximum concentrations of 24.4 ng/g ww and 206 ng/g ww, respectively. Since there was no detection of PFAS in other tissue types, the KS-test and Mann-Whitney U-test were not a relevant measure for statistical significance (Table SX).
+Finally, PFAS contaminants were only detected in liver tissue with mean and maximum concentrations of 24.4 ng/g ww and 206 ng/g ww, respectively. Since there was no detection of PFAS in other tissue types, the KS-test (Table S2) and Mann-Whitney U-test (Table S3) were not a relevant measure for statistical significance.
 <br>
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -784,11 +798,9 @@ species_nondetect_matrix <- matrix(data = species_nondetect,
                                                   species_colnames))
 
 
-colour_gradient <- colorRampPalette(c("white", "red"))(100)
-
 pheatmap(species_nondetect_matrix,
          display_numbers = T,
-         color = colour_gradient,
+         color = colorRampPalette(c('white','red'))(100),
          breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
@@ -801,7 +813,7 @@ pheatmap(species_nondetect_matrix,
 
 ```
 <br>
-Table 2 showed the general statistics for each contaminant group measured in each species. Overall, the minimum and median for each contaminant were similar for each contaminant in each species, fluctuating around half-LOD level (~ 0.015 ng/g ww). The maximum concentration of metals (37.1 ng/g ww) and PBDE (42.8 ng/g ww) were higher in Northern Fulmar than in Black-legged kittiwake. The KS-test and Mann-Whitney test both showed significant differences (p < 0.05) in OPE concentrations between Northern Fulmar and Black-Legged Kittiwake (Table SX).
+Table 2 showed the general statistics for each contaminant group measured in each species. Overall, the minimum and median for each contaminant were similar for each contaminant in each species, fluctuating around half-LOD level (~ 0.015 ng/g ww). The maximum concentration of metals (37.1 ng/g ww) and PBDE (42.8 ng/g ww) were higher in Northern Fulmar than in Black-Legged Kittiwake. The KS-test (Table S4) and Mann-Whitney test (Table S5) both showed significant differences (p < 0.05) in OPE concentrations between Northern Fulmars and Black-Legged Kittiwakes.
 <br>
 ```{r, echo = FALSE}
 
@@ -884,7 +896,7 @@ ggplot(data = long_df, aes(x = species, y = Concentration)) +
 
 ```
 <br>
-Again, the scatter plot with best clustering was selected, this plotting metals vs. PBDE levels between the two bird species (Figure 9). The gradient of PBDE concentration helped clustering the detected values between our focal species, in which Black-legged kittiwake has higher concentrations of PBDE as compared to Northern Fulmar.
+Again, the scatter plot with best clustering was selected, this plotting metals vs. PBDE levels between the two bird species (Figure 9). The gradient of PBDE concentration helped clustering the detected values between our focal species, in which Black-Legged Kittiwake has higher concentrations of PBDE as compared to Northern Fulmar.
 <br>
 ```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 9: Scatter plots of metals and PBDE levels measured in Northern Fulmars (NOFU) and Black-Legged Kittiwakes (BLKI), with and without non-detect values removed. Two rough clusters appear to form, both containing observations from both species, with a somewhat distinct separation of species based on PBDE levels.", fig.width= 12, fig.height=7, dpi=300}
 
@@ -956,11 +968,9 @@ location_nondetect_matrix <- matrix(data = location_nondetect,
                                    dimnames = list(row_names_heat, location_colnames))
 
 
-colour_gradient <- colorRampPalette(c("white", "red"))(100)
-
 pheatmap(location_nondetect_matrix,
          display_numbers = T,
-         color = colour_gradient,
+         color = colorRampPalette(c('white','red'))(100),
          breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
@@ -1055,10 +1065,10 @@ ggplot(data = long_df, aes(x = Collection.Location, y = Concentration)) +
 
 ```
 <br>
-A statistically significant result for the KS-tests (p < 0.05) comparing the contaminant distributions in the Labrador Sea and Prince Leopold Island was found for metals and OPEs, indicating that the levels of these two contaminants significantly differed between the two locations (Table SX). Similarly, the Mann-Whitney U-tests found a significant difference (p < 0.05) in the distributions of metals and OPEs between the two locations (Table SX).
+A statistically significant result for the KS-tests (p < 0.05) comparing the contaminant distributions in the Labrador Sea and Prince Leopold Island was found for metals and OPEs, indicating that the levels of these two contaminants significantly differed between the two locations (Table S6). Similarly, the Mann-Whitney U-tests found a significant difference (p < 0.05) in the distributions of metals and OPEs between the two locations (Table S7).
 <br>
 <br>
-Scatter plots showing different combinations of the four contaminant groups were created to try and 'manually' identify data which may have clustered together, based on the location variable (Figure 12). In general, there were no distinct clusters formed, as highlighted in Figure X, which compared PBDE and OPE levels by location, with and without the non-detect values removed. While the observations from Prince Leopold Island were somewhat grouped together in either plot, the observations were ultimately spread out with no distinct clustering.
+Scatter plots showing different combinations of the four contaminant groups were created to try and 'manually' identify data which may have clustered together, based on the location variable. In general, there were no distinct clusters formed, as highlighted in the best scatter plot chosen (Figure 12), which compared PBDE and OPE levels by location, with and without the non-detect values removed. While the observations from Prince Leopold Island were somewhat grouped together in either plot, the observations were ultimately spread out with no distinct clustering.
 <br>
 ```{r, warning = FALSE, echo = FALSE, fig.cap = "Figure 12: Scatter plots of OPE and PBDE levels measured in the Labrador Sea and Prince Leopold Island, with and without non-detect values removed. While the Prince Leopold Island measurments were somewhat close together, no distinct clustering by location was observed.", fig.width= 12, fig.height=7, dpi=300}
 
@@ -1130,11 +1140,10 @@ sex_nondetect_matrix <- matrix(data = sex_nondetect,
                                     dimnames = list(row_names_heat,
                                                     sex_colnames))
 
-colour_gradient <- colorRampPalette(c("white", "red"))(100)
 
 pheatmap(sex_nondetect_matrix,
          display_numbers = T,
-         color = colour_gradient,
+         color = colorRampPalette(c('white','red'))(100),
          breaks = seq(0,100,1),
          cluster_rows = F,
          cluster_cols = F,
@@ -1202,7 +1211,7 @@ kable_sex
 
 ```
 <br>
-    The boxplots visualized the distributions of each contaminant for both females and males (Figure 14). Again, most of the distributions were focused around the LOD value, with several outliers indicating the few observations that were above the detection limit. The distribution of metals in male birds was the lest skewed of all the distributions, with no outliers being identified beyond the maximum line.
+    The box plots visualized the distributions of each contaminant for both females and males (Figure 14). Again, most of the distributions were focused around the LOD value, with several outliers indicating the few observations that were above the detection limit. The distribution of metals in male birds was the lest skewed of all the distributions, with no outliers being identified beyond the maximum line.
 <br>
 ```{r, echo = FALSE, fig.cap = "Figure 14: The distributions of metal, OPE, PBDE, and PFAS levels in samples collected in male and female birds. Nearly all of the distributions were heavily skewed around the non-detect value (0.015 ng/g ww), with several outliers. The distribution of metals in males was the least skewed of all distributions, with no outliers.", fig.width= 12, fig.height=10}
 
@@ -1228,7 +1237,7 @@ ggplot(data = long_df, aes(x = Sex, y = Concentration)) +
         plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
 ```
 <br>
-A statistically significant result for the KS-tests (p < 0.05) comparing the contaminant distributions in males and females was found for OPEs, PBDEs, and PFAS. Additionally, the Mann-Whitney U-tests found a significant difference (p < 0.05) in the distributions of OPEs and PBDEs between males and females.
+A statistically significant result for the KS-tests (p < 0.05) comparing the contaminant distributions in males and females was found for OPEs, PBDEs, and PFAS (Table S8). Additionally, the Mann-Whitney U-tests found a significant difference (p < 0.05) in the distributions of PFAS between males and females (Table S9).
 <br>
 <br>
 Scatter plots with different combinations of the four contaminant groups were again created, instead grouped by sex, to try and identify data clusters manually. The best plot was chosen as an example, this comparing PBDE and PFAS levels (Figure 15). While some of the measurements for male birds were closer together than those for females, in general there were no distinct clusters indicative of the sex grouping variable.
@@ -1303,28 +1312,28 @@ One reason for why the PCA may not have been effective in capturing the variance
 After PCA failed, k-means clustering was attempted, with the same goal of identifying clusters that may be related to the different grouping variables like tissue type or species. K-means clustering is a type of machine learning algorithm, where observations in a data set are clustered according to how close each observation is to a local mean. Prior to running a k-means algorithm, the data must first be scaled to ensure the algorithm truly clusters data that are similar across the variables without the influence of larger disparities in the range/scale of each variable. Additionally, the number of ‘local means’ (ie. clusters) must be specified at the start of the operation. One of the most common ways to determine the optimal number of clusters is the ‘elbow method’, which plots the within cluster sum of squares against the number of clusters tested by the algorithm. The idea behind this method is to choose the inflection point (elbow) where the error associated within the clusters is no longer minimized to a great degree with the addition of more clusters. Using the elbow method on the total observations for the four contaminants, five clusters was identified as optimal, and chosen for the subsequent k-means operation.
 <br>
 <br>
-After running the k-means algorithm with five clusters selected, it was clear that the clusters were highly skewed, with sizes of 4, 101, 1, 21, and 3 observations. Since there was such an unbalanced distribution of observations in the clusters, any attempt to identify patterns amongst the different grouping variables (tissue type, species, location, sex) would not have been very representative of the actual data. This disparity in the cluster sizes may have been a result of the high number of non-detect values. Since all of these non-detects fell around a similar number (the half-LOD, 0.015 ng/g ww), most likely fell into the cluster containing 101 observations, which would have additionally influenced the clustering of the other observations. Due to this skew in the data, along with the lack of linearity, neither k-means clustering or PCA were ideal in summarizing the data, and more ‘traditional’ statistical methods were used to identify relationships in the different grouping variables.
+After running the k-means algorithm with five clusters selected, it was clear that the clusters were highly skewed, with sizes of 21, 1, 3, 101, and 4 observations. Since there was such an unbalanced distribution of observations in the clusters, any attempt to identify patterns amongst the different grouping variables (tissue type, species, location, sex) would not have been very representative of the actual data. This disparity in the cluster sizes may have been a result of the high number of non-detect values. Since all of these non-detects fell around a similar number (the half-LOD, 0.015 ng/g ww), most likely fell into the cluster containing 101 observations, which would have additionally influenced the clustering of the other observations. Due to this skew in the data, along with the lack of linearity, neither k-means clustering or PCA were ideal in summarizing the data, and more ‘traditional’ statistical methods were used to identify relationships in the different grouping variables.
 <br>
 <br>
 
 ### Tissue Analysis
 <br>
-Firstly, metal contaminants were found mostly in liver tissue with highest mean concentration as compared to all other tissue types. This pattern could be explained by the influence of physiological and seasonal factors on accumulation of toxic metals in bird liver tissue. According to a study by Wayland et. al. in common eiders (Somateria mollissima borealis) in the Canadian Arctic, the concentration of toxic metals, such as cadmium and mercury were directly affected by seasonal changes in body and organ mass.^43^ For instance, due to weight loss during fasting periods, cadmium and mercury may accumulate more in the kidney and liver as compared to pre-laying period, when birds gained more weight and concentration of toxic metals were diluted in the expanding tissue pool. Secondly, the highest OPE contaminants were quantified in fat tissue, which agrees with previous findings that certain organophosphates are prone to storage in fat tissue in rats and humans.^44-45^ However, there are currently limited studies on the effect of OPE on metabolism of seabirds. Thirdly, the highest PBDE concentration was detected in abdominal fat tissue as compared to other tissue types. This result is consistent with previous studies that have reported that PBDE concentrations increase with lipid content in different tissue types.^46^ Finally, PFAS was only detected in liver tissue, which in accordance with previous studies in association between PFAS and phospholipid production, metabolism and storage pathways in chicken embryos.^47-48^ The scatter plot between metal and PBDE showed that in metal and PBDE contaminants both accumulated at low concentrations in egg tissue, while metal concentrations were higher in liver tissue. Therefore, further studies on the metabolic pathway of PBDE and metals in egg and liver tissue are needed to explain this clustering pattern.
+Firstly, metal contaminants were found mostly in liver tissue with highest mean concentration as compared to all other tissue types. This pattern could be explained by the influence of physiological and seasonal factors on accumulation of toxic metals in bird liver tissue. According to a study by Wayland et. al. in common eiders (*Somateria mollissima borealis*) in the Canadian Arctic, the concentration of toxic metals, such as cadmium and mercury were directly affected by seasonal changes in body and organ mass.^43^ For instance, due to weight loss during fasting periods, cadmium and mercury may accumulate more in the kidney and liver as compared to pre-laying period, when birds gained more weight and concentration of toxic metals were diluted in the expanding tissue pool. Secondly, the highest OPE contaminants were quantified in fat tissue, which agrees with previous findings that certain organophosphates are prone to storage in fat tissue in rats and humans.^44-45^ However, there are currently limited studies on the effect of OPE on metabolism of seabirds. Thirdly, the highest PBDE concentration was detected in abdominal fat tissue as compared to other tissue types. This result is consistent with previous studies that have reported that PBDE concentrations increase with lipid content in different tissue types.^46^ Finally, PFAS was only detected in liver tissue, which in accordance with previous studies in association between PFAS and phospholipid production, metabolism and storage pathways in chicken embryos.^47-48^ The scatter plot between metal and PBDE showed that in metal and PBDE contaminants both accumulated at low concentrations in egg tissue, while metal concentrations were higher in liver tissue. Therefore, further studies on the metabolic pathway of PBDE and metals in egg and liver tissue are needed to explain this clustering pattern.
 <br>
 <br>
 
 ### Species Analysis
 <br>
-Firstly, as shown in the result of general statistics,  and scatter plot, the concentration and frequency of detections of PBDE was higher in kittiwakes compared to fulmars. This result can be attributed to differences in foraging strategies and diets between the two species.^20^ Given that black-legged kittiwakes and northern fulmars both prey upon zooplankton and fish, these differences in concentrations can be explained by differences in the exposure of their prey to this contaminant.^49^ However, since little is known about the diet of kittiwakes in the Canadian high Arctic, further studies in the exposure of their prey to PBDE congeners, specifically fish, can yield additional information to the exposure of kittiwakes to PBDE. Secondly, OPEs were detected in Northern Fulmar, which contradicts with the current hypothesis in scientific and regulatory assessments for the potential for bioaccumulation and biomagnification of OPEs in the case of seabirds.^50^ Future work must investigate the large-scale impact of OPEs on marine ecosystems to support more effective regulation and mitigation strategies. Thirdly, since PFAS was only detected in Northern Fulmars, it  indicates that further monitoring studies need to be conducted to investigate whether PFAS concentrations are changing among other Arctic seabirds in general. Finally, the result of KS-test and Mann-Whitney U-test showed no difference in metal concentrations between the focal species, indicating that both species may be exposed to a similar toxic metal source. However, more data on enzymatic activity of metallothionein in different Arctic seabirds need to be collected to understand the mechanism of bioaccumulation and possible toxic effects of trace elements.^51^
+Firstly, as shown in the result of general statistics,  and scatter plot, the concentration and frequency of detections of PBDE was higher in Kittiwakes compared to Fulmars. This result can be attributed to differences in foraging strategies and diets between the two species.^20^ Given that Black-Legged Kittiwakes and Northern Fulmars both prey upon zooplankton and fish, these differences in concentrations can be explained by differences in the exposure of their prey to this contaminant.^49^ However, since little is known about the diet of kittiwakes in the Canadian high Arctic, further studies in the exposure of their prey to PBDE congeners, specifically fish, can yield additional information to the exposure of kittiwakes to PBDE. Secondly, OPEs were detected in Northern Fulmar, which contradicts with the current hypothesis in scientific and regulatory assessments for the potential for bioaccumulation and biomagnification of OPEs in the case of seabirds.^50^ Future work must investigate the large-scale impact of OPEs on marine ecosystems to support more effective regulation and mitigation strategies. Thirdly, since PFAS was only detected in Northern Fulmars, it  indicates that further monitoring studies need to be conducted to investigate whether PFAS concentrations are changing among other Arctic seabirds in general. Finally, the result of KS-test and Mann-Whitney U-test showed no difference in metal concentrations between the focal species, indicating that both species may be exposed to a similar toxic metal source. However, more data on enzymatic activity of metallothionein in different Arctic seabirds need to be collected to understand the mechanism of bioaccumulation and possible toxic effects of trace elements.^51^
 <br>
 <br>
 
 ### Location Analysis
 <br>
-The next grouping variable that was investigated was the location in which the birds were sampled, these being the Labrador Sea, and Prince Leopold Island in Nunavut. As with the other grouping variables, the heat map of non-detect values revealed high levels of these values in all contaminant groups, for both locations (Figure X). The large proportion of non-detect values ultimately led to a lot of skew in the subsequent results and statistics, but regardless, some interesting trends could be investigated. The minimum and median levels for all four contaminants fell around the non-detect value (0.015 ng/g ww), except for the median OPEs detected in the Labrador Sea, which was slightly higher at 0.121 ng/g ww (Table X). Interestingly, outside of metals, which were completely undetected in the Labrador Sea, the maximum and mean levels of OPEs, PBDEs, and PFAS were all greater in the Labrador Sea than in Prince Leopold Island. The CVs were more variable between locations, being greater in the Prince Leopold Island samples for metals and PBDEs, while being greater in the Labrador Sea samples for OPEs and PFAS. In general, all of the CVs were high (> 160%, outside of metals in the Labrador Sea, which were not detected at all), likely a result of the high number of non-detect values, which would have made the few measurements that were above the LOD contribute greatly to the overall variation.
+The next grouping variable that was investigated was the location in which the birds were sampled, these being the Labrador Sea, and Prince Leopold Island in Nunavut. As with the other grouping variables, the heat map of non-detect values revealed high levels of these values in all contaminant groups, for both locations (Figure 10). The large proportion of non-detect values ultimately led to a lot of skew in the subsequent results and statistics, but regardless, some interesting trends could be investigated. The minimum and median levels for all four contaminants fell around the non-detect value (0.015 ng/g ww), except for the median OPEs detected in the Labrador Sea, which was slightly higher at 0.121 ng/g ww (Table 3). Interestingly, outside of metals, which were completely undetected in the Labrador Sea, the maximum and mean levels of OPEs, PBDEs, and PFAS were all greater in the Labrador Sea than in Prince Leopold Island. The CVs were more variable between locations, being greater in the Prince Leopold Island samples for metals and PBDEs, while being greater in the Labrador Sea samples for OPEs and PFAS. In general, all of the CVs were high (> 160%, outside of metals in the Labrador Sea, which were not detected at all), likely a result of the high number of non-detect values, which would have made the few measurements that were above the LOD contribute greatly to the overall variation.
 <br>
 <br>
-The trends observed for the minimum and median values were apparent in most of the boxplots, which showed a heavy skew in the distribution around with non-detect value, with the few measurements above the LOD appearing as outliers (Figure X). Metals measured in the Prince Leopold Island samples had the least skewed of all the distributions, but still had several measurements that were considered outliers. The results of the KS-tests and Mann-Whitney U-tests showed that the distributions of metals and OPEs significantly differed between the two locations. This was expected for metals given that all of the measurements for metals in the Labrador Sea were non-detect values. The significant in OPEs levels in the two locations may have been a result of the few observations in the Labrador Sea samples that were orders of magnitude larger than the largest measured in Prince Leopold Island (OPE maximum = 258 ng/g ww in the Labrador Sea, = 1.54 ng/g ww in Prince Leopold Island), which would have undoubtedly influenced the mean and overall distribution.
+The trends observed for the minimum and median values were apparent in most of the box plots, which showed a heavy skew in the distribution around with non-detect value, with the few measurements above the LOD appearing as outliers (Figure 11). Metals measured in the Prince Leopold Island samples had the least skewed of all the distributions, but still had several measurements that were considered outliers. The results of the KS-tests (Table S6) and Mann-Whitney U-tests (Table S7) showed that the distributions of metals and OPEs significantly differed between the two locations. This was expected for metals given that all of the measurements for metals in the Labrador Sea were non-detect values. The significant in OPEs levels in the two locations may have been a result of the few observations in the Labrador Sea samples that were orders of magnitude larger than the largest measured in Prince Leopold Island (OPE maximum = 258 ng/g ww in the Labrador Sea, = 1.54 ng/g ww in Prince Leopold Island), which would have undoubtedly influenced the mean and overall distribution.
 <br>
 <br>
 Although a significant difference in contaminant measurements based on location was only observed for metals and OPEs, it was still interesting to consider the elevated mean and maximum levels of OPEs, PBDEs, and PFAS in the Labrador Sea samples compared to the Prince Leopold Island samples. One reason for this may be due to the actual latitude of the locations, as the Labrador Sea is more southerly than Prince Leopold Island. Some previous studies have shown that the levels of some contamiannts, such as DDT (dichloro-diphenyl-trichloroethane) and PBDEs, are higher in biota in more southerly locations.^52-53^ Furthermore, previous studies specifically with Northern Fulmars had shown decreasing plastic ingestion in birds as sampling location moved northward.^54-55^ This trend of decreasing plastic ingestion and contaminant levels with increasing latitude makes sense, as plastic abundance has been shown to decrease moving northward, away population centres, and may be why most of the contaminant in this study were detected at higher levels in the more southerly location, the Labrador Sea.^56^
@@ -1333,13 +1342,13 @@ Although a significant difference in contaminant measurements based on location 
 
 ### Sex Analysis
 <br>
-The final grouping variable that was investigated was the sex of the birds, to determine whether contaminant levels differed between males and females. Consistent with the rest of the data subsets, there were a high percentage of non-detect values for each contamiannt in both sexes, the greatest being 100% non-detects for OPEs measured in males, and the lowest being 63% non-detects for PBDEs measured in females (Figure X). The high number of non-detects again skewed the general statistics, with the minimum and median values for all contaminants and sexes being around the non-detect value (0.015 ng/g ww) (Table X). Although OPEs were not detected at all in males, the maximum and mean levels of all four contaminants were higher in female birds than in males. The same was true for the CVs, which were all high in general (> 168%, except for OPEs in males (not detected)). Like with the previous grouping variables, the high CVs were likely a result of the bulk of the data being non-detects, with the few observations above the LOD highly influencing the CVs.
+The final grouping variable that was investigated was the sex of the birds, to determine whether contaminant levels differed between males and females. Consistent with the rest of the data subsets, there were a high percentage of non-detect values for each contamiannt in both sexes, the greatest being 100% non-detects for OPEs measured in males, and the lowest being 63% non-detects for PBDEs measured in females (Figure 13). The high number of non-detects again skewed the general statistics, with the minimum and median values for all contaminants and sexes being around the non-detect value (0.015 ng/g ww) (Table 4). Although OPEs were not detected at all in males, the maximum and mean levels of all four contaminants were higher in female birds than in males. The same was true for the CVs, which were all high in general (> 168%, except for OPEs in males (not detected)). Like with the previous grouping variables, the high CVs were likely a result of the bulk of the data being non-detects, with the few observations above the LOD highly influencing the CVs.
 <br>
 <br>
-The skewness of the data carried over to the boxplots, which showed most of the distributions being heavily concentrated around the non-detect value, with several outlier points representing the measurements taken above the LOD (Figure X). The distribution of metals in male birds was the least skewed of all the distributions with no outlier points, despite the median being at the non-detect value. Despite this, the KS-tests only found a statistically significant difference in the male and female distributions for the other three contaminant groups: OPEs, PBDEs, and PFAS. Additionally, the Mann-Whitney U-tests found a difference in distributions of OPES and PBDEs between males and females. These differences were expected for OPEs since they were completely undetected in male birds, while the differences for PBDEs may have been a result of many of the measurements in females being several orders of magnitude greater than those in males. Finally, it was interesting that while the distributions of PFAS were statistically different between males and females, the means were not. This could have been due to the combination of there being more PFAS measurements above the LOD for males, but those above the LOD for females being larger in magnitude, resulting in different distributions with (statistically) similar means.
+The skewness of the data carried over to the box plots, which showed most of the distributions being heavily concentrated around the non-detect value, with several outlier points representing the measurements taken above the LOD (Figure 14). The distribution of metals in male birds was the least skewed of all the distributions with no outlier points, despite the median being at the non-detect value. Despite this, the KS-tests only found a statistically significant difference in the male and female distributions for the other three contaminant groups: OPEs, PBDEs, and PFAS (Table S8). Additionally, the Mann-Whitney U-tests found a difference in distributions of PFAS between males and females (Table S9). The differences in the results of these tests was interesting, and may have been a result of unequal sample sizes between males and females affecting the test statistics in different ways.
 <br>
 <br>
-While the levels of metals were similar across both sexes, a significant difference in either the distribution or mean levels of the other three contaminants was found between male and female birds. Additionally, without considering the results of the KS and Mann-Whitney U tests, higher mean and maximum levels of all four contaminants were found in females. While some studies, such as one on Fulmars in Greenland, had found higher levels of plastic ingestion in female birds than in males, others show no difference in plastic ingestion/contaminantion between males and females.^54,57^ It is also important to consider the sample sizes in this study, as of the 31 birds sampled, 21 were female and only 10 were male. Although the trends in the samples should be apparent regardless of sample size, the disparity in the sample sizes between the two sexes may have played a role in the differences in the contaminant levels observed.
+While the levels of metals were similar across both sexes, a significant difference (for one test or the other) in the distributions of the other three contaminants was found between male and female birds. Additionally, without considering the results of the KS and Mann-Whitney U tests, higher mean and maximum levels of all four contaminants were found in females. While some studies, such as one on Fulmars in Greenland, had found higher levels of plastic ingestion in female birds than in males, others show no difference in plastic ingestion/contamination between males and females.^54,57^ It is also important to consider the sample sizes in this study, as of the 31 birds sampled, 21 were female and only 10 were male. Although the trends in the samples should be apparent regardless of sample size, the disparity in the sample sizes between the two sexes may have played a role in the differences in the contaminant levels observed.
 <br>
 <br>
 
@@ -1470,14 +1479,14 @@ mw_tissue <- function(df){
       subset_df1 <- filter(df, Tissue == i)
       subset_df2 <- filter(df, Tissue == j)
       
-      # runs the ks-test for the contaminant levels in the two tissue types
+      # runs the mw-test for the contaminant levels in the two tissue types
       
       mw_tissue_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                            y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_tissue_matrix)
   
@@ -1513,18 +1522,19 @@ tissue_MW <- add_column(tissue_MW,
 kable_ks_tissue <- knitr::kable(tissue_KS,
              digits = 4,
              align = "c",
-             caption = "Table SX: KS-test p-values for Comparisons of Contaminant Distributions in Each Tissue Type")
+             caption = "Table S2: KS-test p-values for Comparisons of Contaminant Distributions in Each Tissue Type")
 
 kable_ks_tissue <- row_spec(kable_ks_tissue, c(8:14, 22:28), background = "#D3D3D3")
 kable_ks_tissue <- kable_classic_2(kable_ks_tissue, full_width = F, html_font = "calibri")
 
 kable_ks_tissue
 
+
 # MW test result
 kable_mw_tissue <- knitr::kable(tissue_MW,
              digits = 4,
              align = "c",
-             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Each Tissue Type")
+             caption = "Table S3: MW-test p-values for Comparisons of Contaminant Distributions in Each Tissue Type")
 
 kable_mw_tissue <- row_spec(kable_mw_tissue, c(8:14, 22:28), background = "#D3D3D3")
 kable_mw_tissue <- kable_classic_2(kable_mw_tissue, full_width = F, html_font = "calibri")
@@ -1604,14 +1614,14 @@ mw_species <- function(df){
       subset_df1 <- filter(df, species == i)
       subset_df2 <- filter(df, species == j)
       
-      # runs the ks-test for the contaminant levels in the two species 
+      # runs the mw-test for the contaminant levels in the two species 
       
       mw_species_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                             y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_species_matrix)
   
@@ -1649,7 +1659,7 @@ species_MW <- add_column(species_MW,
 kable_ks_species <- knitr::kable(species_KS,
              digits = 4,
              align = "c",
-             caption = "Table SX: KS-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+             caption = "Table S4: KS-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
 kable_ks_species <- row_spec(kable_ks_species, c(3:4, 7:8), background = "#D3D3D3")
 kable_ks_species <- kable_classic_2(kable_ks_species, full_width = F, html_font = "calibri")
@@ -1660,7 +1670,7 @@ kable_ks_species
 kable_mw_species <- knitr::kable(species_MW,
              digits = 4,
              align = "c",
-             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+             caption = "Table S5: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
 kable_mw_species <- row_spec(kable_mw_species, c(3:4, 7:8), background = "#D3D3D3")
 kable_mw_species <- kable_classic_2(kable_mw_species, full_width = F, html_font = "calibri")
@@ -1743,14 +1753,14 @@ mw_location <- function(df){
       subset_df1 <- filter(df, Collection.Location == i)
       subset_df2 <- filter(df, Collection.Location == j)
       
-      # runs the ks-test for the contaminant levels in the two locations 
+      # runs the mw-test for the contaminant levels in the two locations 
       
       mw_location_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                          y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_location_matrix)
   
@@ -1786,7 +1796,7 @@ location_MW <- add_column(location_MW,
 kable_ks_location <- knitr::kable(location_KS,
              digits = 4,
              align = "c",
-             caption = "Table SX: KS-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+             caption = "Table S6: KS-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
 kable_ks_location <- row_spec(kable_ks_location, c(3:4, 7:8), background = "#D3D3D3")
 kable_ks_location <- kable_classic_2(kable_ks_location, full_width = F, html_font = "calibri")
@@ -1797,7 +1807,7 @@ kable_ks_location
 kable_mw_location <- knitr::kable(location_MW,
              digits = 4,
              align = "c",
-             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+             caption = "Table S7: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
 kable_mw_location <- row_spec(kable_mw_location, c(3:4, 7:8), background = "#D3D3D3")
 kable_mw_location <- kable_classic_2(kable_mw_location, full_width = F, html_font = "calibri")
@@ -1884,14 +1894,14 @@ mw_sex <- function(df){
       subset_df1 <- filter(df, Sex == i)
       subset_df2 <- filter(df, Sex == j)
       
-      # runs the ks-test for the contaminant levels in the two sexes 
+      # runs the mw-test for the contaminant levels in the two sexes 
       
       mw_sex_matrix[i,j] <- wilcox.test(x = subset_df1$Concentration,
                                     y = subset_df2$Concentration)$p.value
     }
   }
   
-  # returns the matrix filled with all the ks-test p-values
+  # returns the matrix filled with all the mw-test p-values
   
   return(mw_sex_matrix)
   
@@ -1941,7 +1951,7 @@ sex_MW <- add_column(sex_MW,
 kable_ks_sex <- knitr::kable(sex_KS,
              digits = 4,
              align = "c",
-             caption = "Table SX: KS-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+             caption = "Table S8: KS-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
 kable_ks_sex <- row_spec(kable_ks_sex, c(3:4, 7:8), background = "#D3D3D3")
 kable_ks_sex <- kable_classic_2(kable_ks_sex, full_width = F, html_font = "calibri")
@@ -1952,7 +1962,7 @@ kable_ks_sex
 kable_mw_sex <- knitr::kable(sex_MW,
              digits = 4,
              align = "c",
-             caption = "Table SX: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
+             caption = "Table S9: MW-test p-values for Comparisons of Contaminant Distributions in Both Bird Species")
 
 kable_mw_sex <- row_spec(kable_mw_sex, c(3:4, 7:8), background = "#D3D3D3")
 kable_mw_sex <- kable_classic_2(kable_mw_sex, full_width = F, html_font = "calibri")
