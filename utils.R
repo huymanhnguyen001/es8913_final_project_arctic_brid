@@ -14,11 +14,4 @@ zero_it_out <- function (data, col, options) {
     }
     return(data)
   }
-  # if (options == "no_zero") {
-  #   list <- list()
-  #   for (col in col) {
-  #     list[col] <- filter(data[,col] > 0)
-  #   }
-  #   
-  # }
 }
