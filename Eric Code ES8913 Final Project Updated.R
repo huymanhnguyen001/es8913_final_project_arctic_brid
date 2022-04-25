@@ -959,11 +959,11 @@ species_MW <- add_column(species_MW,
 
 mw_sex_matrix <- matrix(data = NA, nrow = 2, ncol = 2)
 
-colnames(mw_sex_matrix) <- c("Male",
-                             "Female")
+colnames(mw_sex_matrix) <- c("Female",
+                             "Male")
 
-rownames(mw_sex_matrix) <- c("Male",
-                             "Female")
+rownames(mw_sex_matrix) <- c("Female",
+                             "Male")
 
 
 # creating a function, mw_sex, to run the mw-test comparing two samples
@@ -1261,6 +1261,29 @@ tissue_boxplot <- ggplot(data = long_df,
         legend.position = "hidden",
         plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
 
+# Box plots Species with non-detects-------------------------------------------------
+
+spe_boxplot <- ggplot(data = long_df, aes(x = species, y = Concentration)) + 
+  geom_boxplot(aes(fill = Contaminant)) +
+  facet_wrap( ~ Contaminant, scales = "free") + 
+  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
+       x = "Species") +
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = 15, color = "black"),
+        axis.title.x = element_text(size = 20,
+                                    vjust = -0.5),
+        axis.title.y = element_text(size = 20,
+                                    vjust = 1),
+        axis.text.x = element_text(size = 15), 
+        axis.text.y = element_text(size = 15,
+                                   hjust = 1,
+                                   vjust = 0.5,
+                                   color = "black"), 
+        legend.title = element_text(size=15), 
+        legend.text = element_text(size=15),
+        legend.position = "hidden",
+        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
+
 # Box plots Location with non-detects---------------------------------------------------------
 
 location_boxplot <- ggplot(data = long_df, aes(x = Collection.Location, y = Concentration)) + 
@@ -1291,29 +1314,6 @@ sex_boxplot <- ggplot(data = long_df, aes(x = Sex, y = Concentration)) +
   facet_wrap( ~ Contaminant, scales = "free") + 
   labs(y = bquote("Concentration (ng g"^-1*"ww)"),
        x = "Sex") +
-  theme_classic() + 
-  theme(strip.text.x = element_text(size = 15, color = "black"),
-        axis.title.x = element_text(size = 20,
-                                    vjust = -0.5),
-        axis.title.y = element_text(size = 20,
-                                    vjust = 1),
-        axis.text.x = element_text(size = 15), 
-        axis.text.y = element_text(size = 15,
-                                   hjust = 1,
-                                   vjust = 0.5,
-                                   color = "black"), 
-        legend.title = element_text(size=15), 
-        legend.text = element_text(size=15),
-        legend.position = "hidden",
-        plot.margin = margin(t = 0.7, r = 0.7, b = 0.7, l = 0.7, "cm"))
-
-# Box plots Species with non-detects-------------------------------------------------
-
-spe_boxplot <- ggplot(data = long_df, aes(x = species, y = Concentration)) + 
-  geom_boxplot(aes(fill = Contaminant)) +
-  facet_wrap( ~ Contaminant, scales = "free") + 
-  labs(y = bquote("Concentration (ng g"^-1*"ww)"),
-       x = "Species") +
   theme_classic() + 
   theme(strip.text.x = element_text(size = 15, color = "black"),
         axis.title.x = element_text(size = 20,
